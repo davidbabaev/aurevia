@@ -51,11 +51,19 @@ const BASE =
   'whitespace-nowrap transition-opacity select-none ' +
   'focus-visible:outline-2 focus-visible:-outline-offset-4'
 
-// Disabled wins over every variant colour, including its hover.
+/**
+ * Disabled wins over every variant colour, including its hover.
+ *
+ * The fill is the sold token — the palette's own word for unavailable — with
+ * ink on top at 10.29:1. The earlier pairing of muted on border sat at
+ * 3.76:1; WCAG exempts disabled controls, but the exemption is not a reason
+ * to ship illegible text when a token that passes says the same thing. The
+ * inert read comes from the flat grey fill, not from dimming the label.
+ */
 const DISABLED =
-  'disabled:bg-border disabled:text-muted disabled:border-border ' +
+  'disabled:bg-sold disabled:text-ink disabled:border-sold ' +
   'disabled:cursor-not-allowed disabled:hover:opacity-100 ' +
-  'disabled:hover:bg-border disabled:hover:text-muted'
+  'disabled:hover:bg-sold disabled:hover:text-ink'
 
 export function Button({
   children,

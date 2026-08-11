@@ -97,6 +97,12 @@ Rules — never violate:
     #F3F4F6. Accent as text is permitted on #080A0D and #181B20 only.
   - #DDE1E6 is 1.31:1 on white — dividers and decoration only. A border
     that identifies a control uses #69717C.
+  - #69717C never sits directly on #F3F4F6 — 4.49:1, fails by 0.01.
+    Metadata on the Featured band lives on a white card, or is #080A0D.
+  - #69717C never sits on #080A0D or #181B20 — 4.01:1 and 3.50:1. Use
+    #DDE1E6 for secondary text on dark: 15.09:1 and 13.14:1. It is
+    decoration on white and legible type on obsidian; the token does
+    double duty and which job it is doing depends on the band.
   - Accent occupies under 10% of any screen. Never a full-width accent band.
   - Never fork a component to add a variant. Add the variant.
   - Build two real layouts: 390px and 1280px. Not one stretched one.
