@@ -1,34 +1,58 @@
 import { Link } from 'react-router'
+import logoFull from '../assets/logo-full.svg?raw'
+import logoMark from '../assets/logo-mark.svg?raw'
+
+type WordmarkVariant = 'full' | 'responsive'
 
 interface WordmarkProps {
   /** "ink" for the white nav pill, "bg" for the obsidian footer. */
   tone?: 'ink' | 'bg'
   to?: string
+  /**
+   * "responsive" drops to the symbol below 640px. The full lockup needs about
+   * 190px of width before its subtitle stops being a smudge, and the nav pill
+   * has nothing like that to spare once the CTA is in it.
+   */
+  variant?: WordmarkVariant
 }
 
 /**
- * Text setting of the Aurevia lockup.
- *
- * docs/reference/brand-logo-sheet.png supplies five official versions, but
- * only as raster. Until the mark is available as SVG this stands in with the
- * wordmark's letterspacing and rule detail; the "A" glyph is not faked.
+ * The lockup is inlined rather than referenced with <img> because the black
+ * fills are currentColor: an <img> would resolve them against the SVG's own
+ * document and always come out dark, so the footer's white-on-obsidian
+ * version would be invisible. The markup is a build-time constant from our
+ * own assets, not anything user-supplied.
  */
-export function Wordmark({ tone = 'ink', to = '/' }: WordmarkProps) {
+export function Wordmark({ tone = 'ink', to = '/', variant = 'full' }: WordmarkProps) {
   const colour = tone === 'ink' ? 'text-ink' : 'text-bg'
-  const ruleColour = tone === 'ink' ? 'bg-ink' : 'bg-border'
+  const fill = '[&>svg]:h-auto [&>svg]:w-full'
 
   return (
-    <Link to={to} className={`inline-flex flex-col gap-1 ${colour}`} aria-label="Aurevia Premium Motors — home">
-      <span className="font-display text-body font-extrabold leading-none tracking-[0.18em] whitespace-nowrap sm:text-h3-sm sm:tracking-[0.22em]">
-        AUREVIA
-      </span>
-      {/* The flanking rules are the first thing to go when the nav pill gets
-          tight at 390px; the subtitle itself must never wrap. */}
-      <span className="flex items-center gap-2 whitespace-nowrap" aria-hidden="true">
-        <span className={`hidden h-px w-4 sm:block ${ruleColour}`} />
-        <span className="font-body text-micro">PREMIUM MOTORS</span>
-        <span className={`hidden h-px w-4 sm:block ${ruleColour}`} />
-      </span>
+    <Link
+      to={to}
+      className={`inline-block ${colour}`}
+      aria-label="Aurevia Premium Motors — home"
+    >
+      {variant === 'responsive' ? (
+        <>
+          <span
+            className={`block w-8 sm:hidden ${fill}`}
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: logoMark }}
+          />
+          <span
+            className={`hidden w-[190px] sm:block ${fill}`}
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: logoFull }}
+          />
+        </>
+      ) : (
+        <span
+          className={`block w-[200px] ${fill}`}
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{ __html: logoFull }}
+        />
+      )}
     </Link>
   )
 }

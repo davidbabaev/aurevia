@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" role="img" aria-labelledby="aurevia-mark-title">
+  <title id="aurevia-mark-title">Aurevia</title>
+  <!--
+    Geometry rebuilt from measurements taken off docs/reference/brand-logo-sheet.png
+    (symbol-only panel), not traced. Source bbox was 191 x 152px, aspect 1.257;
+    this viewBox is 1.25. All figures below are percentages of that bbox,
+    mapped onto a 100 x 80 grid.
+
+      flat apex            x 41.5 -> 58.5 at y 0
+      outer edges          (41.5,0)->(0,80) and (58.5,0)->(100,80), straight
+      leg inner edges      (58.3,0)->(11.7,80) and (41.7,0)->(88.3,80),
+                           crossing at (50,14.1) which closes the counter
+      inner wedges         tips at y 50.1, splaying to the base
+      centre stripe        tapers 1.6 wide at the top to 4.2 at the base
+
+    One path for the black so it inverts with currentColor; the stripe is
+    separate because it stays blue on every background. All three black
+    subpaths wind the same way, so the wedges union with the legs where they
+    overlap near the base rather than punching holes out of them.
+  -->
+  <path
+    fill="currentColor"
+    d="M41.5 0H58.5L100 80H88.3L50 14.1L11.7 80H0Z
+       M39.4 50.1L26 80H7.7Z
+       M60.6 50.1L92.3 80H74Z"
+  />
+  <path fill="#3A8EFC" d="M49.2 49.3H50.8L52.1 80H47.9Z" />
+</svg>

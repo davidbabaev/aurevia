@@ -25,7 +25,7 @@ export function Nav() {
           // the pill without either of them wrapping.
           className="flex items-center justify-between gap-3 rounded-pill bg-bg px-4 py-3 sm:gap-4 sm:px-5 lg:px-6"
         >
-          <Wordmark />
+          <Wordmark variant="responsive" />
 
           <ul className="hidden items-center gap-7 lg:flex">
             {LINKS.map((link) => (
