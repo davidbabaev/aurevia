@@ -17,7 +17,7 @@ Muted desaturated colour grade. Deep blacks, clean whites, no crushed shadows.
 Materials are concrete, glass, brushed steel and polished stone.
 Architectural, calm, restrained. Quiet luxury, not flashy.
 Realistic proportions and realistic reflections. Photographic, not rendered.
-The rear of every car is plain unbroken painted metal. Badge recesses are empty. The number plate area is a smooth blank panel with no characters on it.
+Every panel of the car is one smooth uninterrupted painted surface. The boot lid is unbroken paint with no emblem, no script and no lettering. The grille centre is plain mesh with nothing mounted on it. Wheel centre caps are blank discs. Number plate areas are smooth blank painted panels.
 `.trim();
 
 // ---------------------------------------------------------------------
@@ -94,7 +94,7 @@ const SITE_SLOTS = [
     file: 'hero/home-hero.png',
     ratio: '16:9',
     transparent: false,
-    prompt: `A wide cinematic photograph of a single white Mercedes-AMG four-door coupe standing alone at the centre of a vast modern showroom. Tall concrete columns, floor-to-ceiling glazing behind, polished near-black floor. CRITICAL COMPOSITION: the entire lower-left third of the frame is empty dark floor with nothing in it — headline text will be placed there. The car sits centre-right and slightly back. Soft daylight from the left.`,
+    prompt: `A wide cinematic photograph of a single white four-door luxury coupe seen from a FRONT THREE-QUARTER angle, the front of the car facing left of camera, standing alone on a vast polished near-black showroom floor. Tall concrete columns and floor-to-ceiling glazing are far behind it and out of focus. The car sits in the RIGHT HALF of the frame. CRITICAL COMPOSITION: the entire left half of the frame is empty polished dark floor and nothing else — no columns, no furniture, no reflected objects. Headline text goes there. Soft daylight from the left.`,
   },
   {
     id: 'cta-showroom',
