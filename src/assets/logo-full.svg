@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1154 178" role="img" aria-labelledby="aurevia-full-title">
+  <title id="aurevia-full-title">Aurevia Premium Motors</title>
+  <!--
+    Primary horizontal lockup. Every coordinate comes from measuring
+    docs/reference/brand-logo-sheet.png panel 1 and translating the bbox to
+    the origin; nothing here is traced.
+
+      mark        223 x 179, drawn from logo-mark.svg scaled 2.23x
+      wordmark    x 292 -> 1154, cap height 82, baseline y 110
+      rules       y 160 -> 162.5, sitting on the subtitle's midline
+      subtitle    cap height 19, baseline y 172
+
+    The flanking rules are exactly as wide as the outer A glyphs and share
+    their x extents (291..382 against the first A at 292..377, and
+    1064..1154 against the last A at 1069..1154). That alignment is in the
+    source artwork and is why the rules are not a round number long.
+
+    The wordmark cannot be set in a font: its A has no crossbar and its E has
+    no stem, so all seven glyphs are drawn. Black fills use currentColor so
+    the lockup inverts on a dark band; the rules stay blue in both, matching
+    versions 1 and 4 on the sheet.
+  -->
+
+  <!-- symbol -->
+  <g transform="scale(2.23)">
+    <path
+      fill="currentColor"
+      d="M41.5 0H58.5L100 80H88.3L50 14.1L11.7 80H0Z
+         M39.4 50.1L26 80H7.7Z
+         M60.6 50.1L92.3 80H74Z"
+    />
+    <path fill="#3A8EFC" d="M49.2 49.3H50.8L52.1 80H47.9Z" />
+  </g>
+
+  <!-- AUREVIA. Local origin per glyph is the cap top; baseline is y 82. -->
+  <g fill="currentColor">
+    <path transform="translate(292 28)" d="M0 82L43 0L86 82H71L43 28.6L15 82Z" />
+    <path
+      transform="translate(435 28)"
+      d="M0 0V45.5A36.5 36.5 0 0 0 73 45.5V0H58V45.5A21.5 21.5 0 0 1 15 45.5V0Z"
+    />
+    <path
+      transform="translate(576 28)"
+      d="M0 0H58A15 15 0 0 1 73 15V25A15 15 0 0 1 58 40L73 82H54L33 40H15V82H0Z
+         M15 15V25H58V15Z"
+    />
+    <path transform="translate(715 28)" d="M0 0H66V15H0Z M0 33.5H66V48.5H0Z M0 67H66V82H0Z" />
+    <path transform="translate(841 28)" d="M0 0L42.5 82L85 0H70L42.5 53.1L15 0Z" />
+    <path transform="translate(991 28)" d="M0 0H16V82H0Z" />
+    <path transform="translate(1069 28)" d="M0 82L43 0L86 82H71L43 28.6L15 82Z" />
+  </g>
+
+  <!-- flanking rules -->
+  <path fill="#3A8EFC" d="M291 160H382V162.5H291Z M1064 160H1154V162.5H1064Z" />
+
+  <!--
+    PREMIUM MOTORS. Cap height 19, baseline y 172.
+
+    Drawn as stroked centrelines rather than filled outlines: this is a
+    monoline face, so a 2.5 stroke down the middle of each form is both
+    shorter and truer than tracing an outline round it. Filled outlines made
+    the S read as a 5. Local origin per glyph is the cap top, and centrelines
+    are inset 1.25 (half the stroke) from the glyph box.
+
+    Set slightly down from full strength so the wordmark keeps the hierarchy.
+  -->
+  <g
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.85"
+  >
+    <path transform="translate(420 153)" d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25" />
+    <path
+      transform="translate(464 153)"
+      d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25M8 9.55L13.75 17.75"
+    />
+    <path transform="translate(510 153)" d="M11.75 1.25H1.25V17.75H11.75M1.25 9.5H9.5" />
+    <path transform="translate(553 153)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
+    <path transform="translate(606 153)" d="M1.5 1.25V17.75" />
+    <path transform="translate(641 153)" d="M1.25 1.25V11.5A6.25 6.25 0 0 0 13.75 11.5V1.25" />
+    <path transform="translate(688 153)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
+
+    <path transform="translate(770 153)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
+    <path
+      transform="translate(820 153)"
+      d="M1.25 9.5A7.5 8.25 0 1 1 16.25 9.5A7.5 8.25 0 1 1 1.25 9.5Z"
+    />
+    <path transform="translate(867 153)" d="M1.25 1.25H13.75M7.5 1.25V17.75" />
+    <path
+      transform="translate(911 153)"
+      d="M1.25 9.5A7.5 8.25 0 1 1 16.25 9.5A7.5 8.25 0 1 1 1.25 9.5Z"
+    />
+    <path
+      transform="translate(960 153)"
+      d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25M8 9.55L13.75 17.75"
+    />
+    <path
+      transform="translate(1005 153)"
+      d="M13.4 3.9A3.9 3.9 0 0 0 9.5 1.25H5.4A3.9 3.9 0 0 0 5.4 9.05H9.6A4.35 4.35 0 0 1 9.6 17.75H5.4A3.9 3.9 0 0 1 1.5 15.1"
+    />
+  </g>
+</svg>
