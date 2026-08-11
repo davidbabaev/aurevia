@@ -50,17 +50,35 @@
     <path transform="translate(1069 28)" d="M0 82L43 0L86 82H71L43 28.6L15 82Z" />
   </g>
 
-  <!-- flanking rules -->
-  <path fill="#3A8EFC" d="M291 160H382V162.5H291Z M1064 160H1154V162.5H1064Z" />
+  <!-- Flanking rules. Shortened from 91 to 30 units: the enlarged subtitle
+       needs the width, and the subtitle block still has to clear the mark,
+       which ends at x 223. -->
+  <path fill="#3A8EFC" d="M291 159H321V163H291Z M1124 159H1154V163H1124Z" />
 
   <!--
-    PREMIUM MOTORS. Cap height 19, baseline y 172.
+    PREMIUM MOTORS. Cap height 34, baseline y 178.
+
+    Enlarged from the sheet's proportions. At source scale the subtitle cap is
+    19 against the wordmark's 82 — a ratio of 0.23 — which renders at 3.3px
+    when the lockup is set 200px wide in the footer, well under the ~6px caps
+    need to resolve. Cap 34 puts it at 5.9px and it reads.
+
+    The block still spans only the wordmark (291..1154), not the whole lockup,
+    because anything further left collides with the mark, which ends at x 223.
+    That 863 units is a hard budget: at cap 34 the glyphs alone take 359.5, so
+    cap height and tracking trade directly against each other. Cap won —
+    tracking is 29 against the original 28, which is a rise in absolute units
+    but a fall relative to the letters (1.47x cap down to 0.85x).
+
+    Glyph paths are unchanged from the 19-cap drawing; each is scaled 1.789 in
+    its own transform, which takes the 2.5 stroke to 4.47 along with it, so
+    the monoline weight stays proportional.
 
     Drawn as stroked centrelines rather than filled outlines: this is a
-    monoline face, so a 2.5 stroke down the middle of each form is both
-    shorter and truer than tracing an outline round it. Filled outlines made
-    the S read as a 5. Local origin per glyph is the cap top, and centrelines
-    are inset 1.25 (half the stroke) from the glyph box.
+    monoline face, so a stroke down the middle of each form is both shorter
+    and truer than tracing an outline round it. Filled outlines made the S
+    read as a 5. Local origin per glyph is the cap top; centrelines are inset
+    half a stroke from the glyph box.
 
     Set slightly down from full strength so the wordmark keeps the hierarchy.
   -->
@@ -72,33 +90,33 @@
     stroke-linejoin="round"
     opacity="0.85"
   >
-    <path transform="translate(420 153)" d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25" />
+    <path transform="translate(339 144) scale(1.789)" d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25" />
     <path
-      transform="translate(464 153)"
+      transform="translate(394.8 144) scale(1.789)"
       d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25M8 9.55L13.75 17.75"
     />
-    <path transform="translate(510 153)" d="M11.75 1.25H1.25V17.75H11.75M1.25 9.5H9.5" />
-    <path transform="translate(553 153)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
-    <path transform="translate(606 153)" d="M1.5 1.25V17.75" />
-    <path transform="translate(641 153)" d="M1.25 1.25V11.5A6.25 6.25 0 0 0 13.75 11.5V1.25" />
-    <path transform="translate(688 153)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
+    <path transform="translate(450.6 144) scale(1.789)" d="M11.75 1.25H1.25V17.75H11.75M1.25 9.5H9.5" />
+    <path transform="translate(502.9 144) scale(1.789)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
+    <path transform="translate(567.7 144) scale(1.789)" d="M1.5 1.25V17.75" />
+    <path transform="translate(602.1 144) scale(1.789)" d="M1.25 1.25V11.5A6.25 6.25 0 0 0 13.75 11.5V1.25" />
+    <path transform="translate(657.9 144) scale(1.789)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
 
-    <path transform="translate(770 153)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
+    <path transform="translate(782.7 144) scale(1.789)" d="M1.25 17.75V1.25L10 11.5L18.75 1.25V17.75" />
     <path
-      transform="translate(820 153)"
+      transform="translate(847.5 144) scale(1.789)"
       d="M1.25 9.5A7.5 8.25 0 1 1 16.25 9.5A7.5 8.25 0 1 1 1.25 9.5Z"
     />
-    <path transform="translate(867 153)" d="M1.25 1.25H13.75M7.5 1.25V17.75" />
+    <path transform="translate(908.7 144) scale(1.789)" d="M1.25 1.25H13.75M7.5 1.25V17.75" />
     <path
-      transform="translate(911 153)"
+      transform="translate(964.5 144) scale(1.789)"
       d="M1.25 9.5A7.5 8.25 0 1 1 16.25 9.5A7.5 8.25 0 1 1 1.25 9.5Z"
     />
     <path
-      transform="translate(960 153)"
+      transform="translate(1025.7 144) scale(1.789)"
       d="M1.25 17.75V1.25H8.5A4.15 4.15 0 0 1 8.5 9.55H1.25M8 9.55L13.75 17.75"
     />
     <path
-      transform="translate(1005 153)"
+      transform="translate(1079.7 144) scale(1.789)"
       d="M13.4 3.9A3.9 3.9 0 0 0 9.5 1.25H5.4A3.9 3.9 0 0 0 5.4 9.05H9.6A4.35 4.35 0 0 1 9.6 17.75H5.4A3.9 3.9 0 0 1 1.5 15.1"
     />
   </g>
