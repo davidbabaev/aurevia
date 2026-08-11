@@ -17,6 +17,7 @@ Muted desaturated colour grade. Deep blacks, clean whites, no crushed shadows.
 Materials are concrete, glass, brushed steel and polished stone.
 Architectural, calm, restrained. Quiet luxury, not flashy.
 Realistic proportions and realistic reflections. Photographic, not rendered.
+The rear of every car is plain unbroken painted metal. Badge recesses are empty. The number plate area is a smooth blank panel with no characters on it.
 `.trim();
 
 // ---------------------------------------------------------------------

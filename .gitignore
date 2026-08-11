@@ -28,3 +28,7 @@ __pycache__/
 *.sw?
 .env
 .env.local
+
+# Untouched model output. Kept on disk so keying and WebP quality can be
+# retuned without paying for 70 more generations; never committed.
+public/images/_raw/
