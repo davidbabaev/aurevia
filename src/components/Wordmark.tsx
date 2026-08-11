@@ -15,7 +15,11 @@ interface WordmarkProps {
  */
 export function Wordmark({ tone = 'ink', to = '/' }: WordmarkProps) {
   const colour = tone === 'ink' ? 'text-ink' : 'text-bg'
-  const ruleColour = tone === 'ink' ? 'bg-ink' : 'bg-border'
+  // The rules are blue in both official versions that carry them — the
+  // primary horizontal lockup and the white-on-black one — so they do not
+  // flip with tone the way the lettering does. --logo-blue is the mark's own
+  // colour, not --color-accent; see the note in index.css.
+  const ruleColour = 'bg-[var(--logo-blue)]'
 
   return (
     <Link to={to} className={`inline-flex flex-col gap-1 ${colour}`} aria-label="Aurevia Premium Motors — home">

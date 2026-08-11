@@ -113,6 +113,19 @@
   --container-narrow: 760px;
 }
 
+/*
+ * Brand asset colour, sampled from docs/reference/brand-logo-sheet.png — the
+ * weighted mean of the saturated blue in the mark. It is NOT a @theme token
+ * and must never become one: the logo is artwork, not part of the nine-colour
+ * UI palette, and #3A8EFC is a different, more saturated blue than
+ * --color-accent. Declaring it here rather than in @theme means Tailwind
+ * generates no bg-logo-blue utility, so it cannot leak into a component.
+ * When the mark lands as SVG this moves inside the file and disappears.
+ */
+:root {
+  --logo-blue: #3a8efc;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
