@@ -4,6 +4,7 @@
  *
  *   npm run images                      generate whatever is missing
  *   npm run images -- --force           regenerate everything
+ *   npm run images -- --reencode        rebuild shipped files from the raws
  *   npm run images -- --only id,id      generate named slots only
  *   npm run images -- --dry-run         print the plan, call nothing
  *
@@ -50,13 +51,39 @@ const BACKOFF_MS = [2_000, 6_000]
 const USD_PER_IMAGE = Number(process.env.IMAGE_USD_EACH ?? 0.039)
 
 // --- background keying -------------------------------------------------
-// A pixel counts as background only if it is this light AND connected to the
-// frame edge. Threshold alone would punch holes through the white cars in the
-// manifest — polar white, glacier white, mineral white.
-const WHITE_MIN = 236
-// Light pixels touching the background get partial alpha so the cut-out keeps
-// its anti-aliased edge instead of going hard and jagged.
-const EDGE_SOFT_LO = 200
+// The background is found by flood filling inward from the corners, never by
+// thresholding the whole image: a white car body is light but is not
+// connected to the frame edge, so connectivity is what protects it.
+//
+// The threshold is derived per image rather than fixed. A fixed 236 failed on
+// all 12 cut-outs because the model's "white seamless" carries a vignette —
+// most of the backdrop sits below 236, so the fill never reached the car and
+// only a band along the bottom came away.
+const CORNER_SAMPLE = 16
+// Tolerances tried below the sampled corner level, tightest first.
+const TOLERANCES = [4, 8, 12, 16, 20, 26, 32, 40, 50, 62, 76, 92]
+// A fill covering more than this is eating the car, not the backdrop.
+const FILL_CEILING = 0.94
+// A jump this large between consecutive tolerances means the fill just leaked
+// through the silhouette. Take the step before it.
+const FILL_LEAK_JUMP = 0.14
+// Below this the fill has clearly not reached round the car yet.
+const FILL_FLOOR = 0.12
+// The fill refuses to cross a pixel whose local gradient exceeds this. Level
+// alone cannot separate a white roof from a white backdrop — they are the same
+// brightness — but the boundary between them is a hard edge and the backdrop
+// is smooth. Without this the fill runs over the roof of the white cars and
+// eats the glass from the inside.
+const EDGE_GUARD = 16
+// Opaque islands smaller than this are keying specks, not the car. Left in,
+// a single stray corner pixel drags the trim box out to the frame edge.
+const SPECK_FRACTION = 0.01
+// The fill can still leak into a white car through the roof, where body and
+// backdrop are the same brightness and the boundary is soft. It gets in
+// through a narrow neck, so opening the background mask by this radius severs
+// anything thinner than 2x it while leaving the real backdrop untouched.
+const MASK_OPEN_RADIUS = 7
+
 const TRIM_ALPHA = 8
 const TRIM_MARGIN_RATIO = 0.02
 const TRIM_MARGIN_MIN = 8
@@ -74,14 +101,18 @@ const WEBP_MAX_PROBES = 8
 const WEBP_EFFORT = 5
 
 function parseArgs(argv) {
-  const options = { force: false, dryRun: false, only: null }
+  const options = { force: false, dryRun: false, reencode: false, only: null }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--force') options.force = true
     else if (arg === '--dry-run') options.dryRun = true
+    else if (arg === '--reencode') options.reencode = true
     else if (arg === '--only') options.only = splitIds(argv[++i])
     else if (arg.startsWith('--only=')) options.only = splitIds(arg.slice(7))
     else fail(`Unknown argument: ${arg}`)
+  }
+  if (options.reencode && options.force) {
+    fail('--reencode and --force contradict each other: one rebuilds from raws, the other regenerates.')
   }
   return options
 }
@@ -157,11 +188,15 @@ async function generateImage(ai, slot) {
 }
 
 /**
- * Keys the white seamless to alpha and trims to the subject.
+ * Keys the white seamless to alpha, de-halos the edge and trims to the
+ * subject with a guaranteed margin.
  *
- * Background is found by flood filling inward from the frame edge rather than
- * by thresholding the whole image, which is what keeps a white car opaque: its
- * body is light but it is not connected to the border.
+ * Background is found by flood filling from the corners rather than by
+ * thresholding the whole image, which is what keeps a white car opaque: its
+ * body is light but it is not connected to the frame edge.
+ *
+ * Returns diagnostics alongside the buffer so the log can show which
+ * threshold each image needed and whether the subject ran off frame.
  */
 async function keyWhiteToAlpha(input) {
   const { data, info } = await sharp(input)
@@ -170,70 +205,250 @@ async function keyWhiteToAlpha(input) {
     .toBuffer({ resolveWithObject: true })
 
   const { width, height } = info
+  const total = width * height
   const lightness = (pixel) => {
     const i = pixel * 4
     return Math.min(data[i], data[i + 1], data[i + 2])
   }
 
-  const outside = new Uint8Array(width * height)
-  const stack = []
-  const visit = (x, y) => {
-    if (x < 0 || y < 0 || x >= width || y >= height) return
-    const pixel = y * width + x
-    if (outside[pixel]) return
-    if (lightness(pixel) < WHITE_MIN) return
-    outside[pixel] = 1
-    stack.push(pixel)
+  // What is the backdrop actually made of? Read it off the four corners
+  // rather than assuming. The median resists a stray dark speck; the minimum
+  // across the four corners keeps a vignetted corner from raising the bar.
+  const cornerLevel = () => {
+    const levels = []
+    for (const [ox, oy] of [
+      [0, 0],
+      [width - CORNER_SAMPLE, 0],
+      [0, height - CORNER_SAMPLE],
+      [width - CORNER_SAMPLE, height - CORNER_SAMPLE],
+    ]) {
+      const block = []
+      for (let y = oy; y < oy + CORNER_SAMPLE; y++) {
+        for (let x = ox; x < ox + CORNER_SAMPLE; x++) block.push(lightness(y * width + x))
+      }
+      block.sort((a, b) => a - b)
+      levels.push(block[Math.floor(block.length / 2)])
+    }
+    return Math.min(...levels)
   }
 
-  for (let x = 0; x < width; x++) {
-    visit(x, 0)
-    visit(x, height - 1)
-  }
+  const backdrop = cornerLevel()
+
+  // Local gradient, used as a barrier below. Cheap 4-neighbour maximum
+  // difference; the backdrop reads near zero and any real edge reads high.
+  const gradient = new Uint8Array(total)
   for (let y = 0; y < height; y++) {
-    visit(0, y)
-    visit(width - 1, y)
-  }
-  while (stack.length) {
-    const pixel = stack.pop()
-    const x = pixel % width
-    const y = (pixel - x) / width
-    visit(x - 1, y)
-    visit(x + 1, y)
-    visit(x, y - 1)
-    visit(x, y + 1)
+    for (let x = 0; x < width; x++) {
+      const pixel = y * width + x
+      const here = lightness(pixel)
+      let peak = 0
+      if (x > 0) peak = Math.max(peak, Math.abs(here - lightness(pixel - 1)))
+      if (x < width - 1) peak = Math.max(peak, Math.abs(here - lightness(pixel + 1)))
+      if (y > 0) peak = Math.max(peak, Math.abs(here - lightness(pixel - width)))
+      if (y < height - 1) peak = Math.max(peak, Math.abs(here - lightness(pixel + width)))
+      gradient[pixel] = Math.min(255, peak)
+    }
   }
 
-  const touchesOutside = (x, y) =>
+  // Flood fill from all four corners at a given threshold. Seeding the corners
+  // rather than the whole border lets a car that runs off the edge of frame act
+  // as a wall; the corner seeds still reach right round the backdrop.
+  const fillAt = (threshold) => {
+    const mask = new Uint8Array(total)
+    const stack = []
+    const visit = (x, y) => {
+      if (x < 0 || y < 0 || x >= width || y >= height) return
+      const pixel = y * width + x
+      if (mask[pixel]) return
+      if (lightness(pixel) < threshold) return
+      if (gradient[pixel] > EDGE_GUARD) return
+      mask[pixel] = 1
+      stack.push(pixel)
+    }
+    for (const [x, y] of [
+      [0, 0],
+      [width - 1, 0],
+      [0, height - 1],
+      [width - 1, height - 1],
+    ]) {
+      visit(x, y)
+    }
+    let filled = 0
+    while (stack.length) {
+      const pixel = stack.pop()
+      filled++
+      const x = pixel % width
+      const y = (pixel - x) / width
+      visit(x - 1, y)
+      visit(x + 1, y)
+      visit(x, y - 1)
+      visit(x, y + 1)
+    }
+    return { mask, fraction: filled / total }
+  }
+
+  // Relax the threshold until the fill has reached round the silhouette, and
+  // stop the step before it leaks through into the car.
+  let chosen = null
+  let previous = 0
+  let usedTolerance = null
+  for (const tolerance of TOLERANCES) {
+    const threshold = Math.max(1, backdrop - tolerance)
+    const attempt = fillAt(threshold)
+    if (attempt.fraction > FILL_CEILING) break
+    if (chosen && attempt.fraction - previous > FILL_LEAK_JUMP) break
+    chosen = attempt
+    previous = attempt.fraction
+    usedTolerance = tolerance
+    // Once the backdrop is comfortably covered there is nothing to gain by
+    // relaxing further, and every extra step risks the leak.
+    if (attempt.fraction > 0.35) break
+  }
+
+  if (!chosen || chosen.fraction < FILL_FLOOR) {
+    throw new Error(
+      `keying could not separate the backdrop (corner level ${backdrop}, best fill ` +
+        `${chosen ? (chosen.fraction * 100).toFixed(1) : '0'}%) — the frame was not white seamless`,
+    )
+  }
+
+  // Open the background mask: erode, keep what still reaches the border,
+  // dilate back, then intersect with the original so nothing grows into the
+  // car. Square structuring element, applied separably.
+  const morph = (mask, radius, keepMax) => {
+    const pass = (src, horizontal) => {
+      const out = new Uint8Array(total)
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let value = keepMax ? 0 : 1
+          for (let d = -radius; d <= radius; d++) {
+            const nx = horizontal ? x + d : x
+            const ny = horizontal ? y : y + d
+            const inside = nx >= 0 && ny >= 0 && nx < width && ny < height
+            // Outside the canvas counts as background, so erosion does not
+            // eat the mask away from the frame edge.
+            const v = inside ? src[ny * width + nx] : 1
+            value = keepMax ? Math.max(value, v) : Math.min(value, v)
+          }
+          out[y * width + x] = value
+        }
+      }
+      return out
+    }
+    return pass(pass(mask, true), false)
+  }
+
+  const eroded = morph(chosen.mask, MASK_OPEN_RADIUS, false)
+
+  // Only the eroded background that still touches the frame edge is real.
+  const anchored = new Uint8Array(total)
+  {
+    const stack = []
+    const seed = (x, y) => {
+      const pixel = y * width + x
+      if (anchored[pixel] || !eroded[pixel]) return
+      anchored[pixel] = 1
+      stack.push(pixel)
+    }
+    for (let x = 0; x < width; x++) {
+      seed(x, 0)
+      seed(x, height - 1)
+    }
+    for (let y = 0; y < height; y++) {
+      seed(0, y)
+      seed(width - 1, y)
+    }
+    while (stack.length) {
+      const pixel = stack.pop()
+      const x = pixel % width
+      const y = (pixel - x) / width
+      if (x > 0) seed(x - 1, y)
+      if (x < width - 1) seed(x + 1, y)
+      if (y > 0) seed(x, y - 1)
+      if (y < height - 1) seed(x, y + 1)
+    }
+  }
+
+  const reopened = morph(anchored, MASK_OPEN_RADIUS, true)
+  const outside = new Uint8Array(total)
+  for (let p = 0; p < total; p++) outside[p] = chosen.mask[p] && reopened[p] ? 1 : 0
+
+  const nearOutside = (x, y) =>
     (x > 0 && outside[y * width + x - 1]) ||
     (x < width - 1 && outside[y * width + x + 1]) ||
     (y > 0 && outside[(y - 1) * width + x]) ||
     (y < height - 1 && outside[(y + 1) * width + x])
 
-  let minX = width
-  let minY = height
-  let maxX = -1
-  let maxY = -1
+  // De-halo. A fringe pixel is part backdrop and part car, so give it partial
+  // alpha AND take the backdrop's contribution back out of its colour.
+  // Without the unpremultiply the edge keeps a white rim on every card.
+  const fringeFloor = Math.max(1, backdrop - 90)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const pixel = y * width + x
-      const alphaIndex = pixel * 4 + 3
+      const i = pixel * 4
 
       if (outside[pixel]) {
-        data[alphaIndex] = 0
+        data[i + 3] = 0
         continue
       }
 
-      if (touchesOutside(x, y)) {
+      if (nearOutside(x, y)) {
         const light = lightness(pixel)
-        if (light > EDGE_SOFT_LO) {
-          const t = Math.min(1, (light - EDGE_SOFT_LO) / (WHITE_MIN - EDGE_SOFT_LO))
-          data[alphaIndex] = Math.round(255 * (1 - t))
+        if (light > fringeFloor) {
+          const alpha = Math.max(0, Math.min(1, (backdrop - light) / (backdrop - fringeFloor)))
+          data[i + 3] = Math.round(255 * alpha)
+          if (alpha > 0.02) {
+            for (let c = 0; c < 3; c++) {
+              const unmixed = (data[i + c] - backdrop * (1 - alpha)) / alpha
+              data[i + c] = Math.max(0, Math.min(255, Math.round(unmixed)))
+            }
+          }
         }
       }
+    }
+  }
 
-      if (data[alphaIndex] > TRIM_ALPHA) {
+  // Drop keying specks. The threshold is generous rather than "keep the
+  // largest": punched-out glass can split a car into more than one component,
+  // and deleting its roof would be a worse bug than leaving a speck.
+  const minIsland = Math.round(total * SPECK_FRACTION)
+  const seen = new Uint8Array(total)
+  for (let start = 0; start < total; start++) {
+    if (seen[start] || data[start * 4 + 3] <= TRIM_ALPHA) continue
+    const island = []
+    const queue = [start]
+    seen[start] = 1
+    while (queue.length) {
+      const pixel = queue.pop()
+      island.push(pixel)
+      const x = pixel % width
+      const y = (pixel - x) / width
+      const push = (nx, ny) => {
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) return
+        const next = ny * width + nx
+        if (seen[next] || data[next * 4 + 3] <= TRIM_ALPHA) return
+        seen[next] = 1
+        queue.push(next)
+      }
+      push(x - 1, y)
+      push(x + 1, y)
+      push(x, y - 1)
+      push(x, y + 1)
+    }
+    if (island.length < minIsland) {
+      for (const pixel of island) data[pixel * 4 + 3] = 0
+    }
+  }
+
+  let minX = width
+  let minY = height
+  let maxX = -1
+  let maxY = -1
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (data[(y * width + x) * 4 + 3] > TRIM_ALPHA) {
         if (x < minX) minX = x
         if (x > maxX) maxX = x
         if (y < minY) minY = y
@@ -246,19 +461,44 @@ async function keyWhiteToAlpha(input) {
     throw new Error('keying left nothing opaque — the frame was not white seamless')
   }
 
+  // Trim to the subject, then guarantee the margin. Clamping alone silently
+  // dropped it whenever the subject reached the frame edge, which is why the
+  // earlier cut-outs all had opaque pixels sitting on the canvas border.
   const margin = Math.max(TRIM_MARGIN_MIN, Math.round(Math.max(width, height) * TRIM_MARGIN_RATIO))
   const left = Math.max(0, minX - margin)
   const top = Math.max(0, minY - margin)
+  const right = Math.min(width - 1, maxX + margin)
+  const bottom = Math.min(height - 1, maxY + margin)
 
-  return sharp(data, { raw: { width, height, channels: 4 } })
-    .extract({
-      left,
-      top,
-      width: Math.min(width - left, maxX - minX + 1 + margin * 2),
-      height: Math.min(height - top, maxY - minY + 1 + margin * 2),
-    })
+  const clipped =
+    minX === 0 || minY === 0 || maxX === width - 1 || maxY === height - 1
+
+  const trimmed = await sharp(data, { raw: { width, height, channels: 4 } })
+    .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
     .png()
     .toBuffer()
+
+  // Pad back whatever the clamp could not give us, in transparent pixels.
+  const padLeft = margin - (minX - left)
+  const padTop = margin - (minY - top)
+  const padRight = margin - (right - maxX)
+  const padBottom = margin - (bottom - maxY)
+
+  const buffer =
+    padLeft || padTop || padRight || padBottom
+      ? await sharp(trimmed)
+          .extend({
+            left: padLeft,
+            top: padTop,
+            right: padRight,
+            bottom: padBottom,
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+          })
+          .png()
+          .toBuffer()
+      : trimmed
+
+  return { buffer, backdrop, tolerance: usedTolerance, removed: chosen.fraction, clipped }
 }
 
 /**
@@ -324,14 +564,19 @@ async function processSlot(ai, slot, options) {
   const rawPath = join(RAW_DIR, slot.file)
   const outPath = join(IMAGES_DIR, webpPath(slot.file))
 
-  if (!options.force && existsSync(outPath)) {
+  if (options.reencode && !existsSync(rawPath)) {
+    logSlot('failed', slot, 0, 'no raw on disk to re-encode from')
+    return { status: 'failed', slot, error: 'no raw on disk' }
+  }
+
+  if (!options.force && !options.reencode && existsSync(outPath)) {
     const { size } = await stat(outPath)
     logSlot('skipped', slot, size)
     return { status: 'skipped', slot }
   }
 
   if (options.dryRun) {
-    const reusable = !options.force && existsSync(rawPath)
+    const reusable = options.reencode || (!options.force && existsSync(rawPath))
     logSlot(
       'planned',
       slot,
@@ -344,10 +589,12 @@ async function processSlot(ai, slot, options) {
   }
 
   // A raw already on disk means the model has been paid for. Re-encode from
-  // it unless --force explicitly asks for a new generation.
+  // it unless --force explicitly asks for a new generation. --reencode is the
+  // same path made explicit: rebuild the shipped file from raws, never call
+  // the API, so a keying or quality change cannot cost anything.
   let rawBuffer = null
   let reusedRaw = false
-  if (!options.force && existsSync(rawPath)) {
+  if (options.reencode || (!options.force && existsSync(rawPath))) {
     rawBuffer = await readFile(rawPath)
     reusedRaw = true
   }
@@ -363,7 +610,12 @@ async function processSlot(ai, slot, options) {
 
       // The raw stays exactly as the model returned it; keying happens on the
       // way to the shipped file, so the threshold can be retuned for free.
-      const master = slot.transparent ? await keyWhiteToAlpha(rawBuffer) : rawBuffer
+      let keyed = null
+      let master = rawBuffer
+      if (slot.transparent) {
+        keyed = await keyWhiteToAlpha(rawBuffer)
+        master = keyed.buffer
+      }
       const encoded = await encodeWebp(master, slot)
 
       await mkdir(dirname(outPath), { recursive: true })
@@ -371,8 +623,9 @@ async function processSlot(ai, slot, options) {
 
       const note = [
         `q${encoded.quality}`,
-        `[${encoded.probes.join(' ')}]`,
-        reusedRaw ? 'reused raw' : '',
+        keyed ? `key bg${keyed.backdrop}-${keyed.tolerance} cut ${(keyed.removed * 100).toFixed(0)}%` : '',
+        keyed?.clipped ? 'SUBJECT RUNS OFF FRAME' : '',
+        reusedRaw ? 'from raw' : '',
         attempt > 1 ? `attempt ${attempt}` : '',
         encoded.overBudget ? 'OVER BUDGET — needs a resize' : '',
       ]
@@ -386,6 +639,7 @@ async function processSlot(ai, slot, options) {
         bytes: encoded.buffer.length,
         quality: encoded.quality,
         overBudget: encoded.overBudget,
+        clipped: keyed?.clipped ?? false,
         // A re-encode costs nothing, so it must not count toward the bill.
         billable: !reusedRaw,
       }
@@ -428,12 +682,15 @@ async function main() {
     slots = SLOTS.filter((slot) => wanted.has(slot.id))
   }
 
-  const apiKey = options.dryRun ? 'dry-run' : loadApiKey()
+  // A re-encode never reaches the network, so it must not demand a key.
+  const offline = options.dryRun || options.reencode
+  const apiKey = offline ? 'offline' : loadApiKey()
   const ai = new GoogleGenAI({ apiKey })
 
   console.log(
     `\n${slots.length} of ${TOTAL} slots · model ${MODEL} · concurrency ${CONCURRENCY}` +
-      `${options.force ? ' · force' : ''}${options.dryRun ? ' · dry run' : ''}\n`,
+      `${options.force ? ' · force' : ''}${options.reencode ? ' · re-encode from raws, no API' : ''}` +
+      `${options.dryRun ? ' · dry run' : ''}\n`,
   )
 
   const started = Date.now()

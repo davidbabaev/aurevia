@@ -19,6 +19,7 @@ Architectural, calm, restrained. Quiet luxury, not flashy.
 Realistic proportions and realistic reflections. Photographic, not rendered.
 The boot lid is one continuous painted surface. Every panel of the car is smooth uninterrupted paint. The grille centre is plain mesh with nothing mounted on it. Number plate areas are smooth blank painted panels.
 The entire image is near-monochrome. Greys, blacks, whites and the car's own body colour only. No gold, no chrome glint, no saturated colour anywhere in frame.
+All tail lights, headlights and indicators are switched off, unlit and dark. No red or amber glow anywhere.
 `.trim();
 
 // ---------------------------------------------------------------------
@@ -45,11 +46,11 @@ export const VEHICLES = [
 
   { slug: 'audi-a7-sportback',          brand: 'Audi',          type: 'sedan',  desc: 'an Audi A7 Sportback five-door coupe in daytona grey, sloping fastback roofline, full-width rear light bar' },
   { slug: 'audi-q8',                    brand: 'Audi',          type: 'suv',    desc: 'an Audi Q8 coupe SUV in glacier white, octagonal grille, black lower cladding, large alloys' },
-  { slug: 'audi-rs-e-tron-gt',          brand: 'Audi',          type: 'sports', desc: 'an Audi RS e-tron GT electric four-door coupe in tactical green metallic, closed-off front, low wide stance' },
+  { slug: 'audi-rs-e-tron-gt',          brand: 'Audi',          type: 'sports', desc: 'an Audi RS e-tron GT electric four-door coupe in mythos black metallic, closed-off front, low wide stance' },
 
-  { slug: 'bmw-i4-m50',                 brand: 'BMW',           type: 'sedan',  desc: 'a BMW i4 M50 electric gran coupe in mineral white, closed kidney grille, blue accent trim, dark alloys' },
+  { slug: 'bmw-i4-m50',                 brand: 'BMW',           type: 'sedan',  desc: 'a BMW i4 M50 electric gran coupe in mineral white, closed kidney grille, dark trim, dark alloys' },
   { slug: 'bmw-x7',                     brand: 'BMW',           type: 'suv',    desc: 'a large BMW X7 seven-seat SUV in carbon black metallic, tall upright stance, split headlights, chrome trim' },
-  { slug: 'bmw-m4-competition',         brand: 'BMW',           type: 'sports', desc: 'a BMW M4 Competition coupe in sao paulo yellow, very wide arches, carbon roof, dark forged wheels' },
+  { slug: 'bmw-m4-competition',         brand: 'BMW',           type: 'sports', desc: 'a BMW M4 Competition coupe in brilliant white with a carbon roof, very wide arches, dark forged wheels' },
 
   { slug: 'porsche-taycan',             brand: 'Porsche',       type: 'sedan',  desc: 'a Porsche Taycan electric sports saloon in volcano grey metallic, very low roofline, full-width light bar' },
   { slug: 'porsche-cayenne',            brand: 'Porsche',       type: 'suv',    desc: 'a Porsche Cayenne SUV in jet black metallic, sloping roof, body-coloured arches, polished alloys' },
@@ -66,23 +67,31 @@ const GALLERY_SHOTS = [
     transparent: false,
     prompt: (v) => `A three-quarter front exterior photograph of ${v.desc}, parked inside a modern minimalist concrete showroom with floor-to-ceiling glazing and a polished dark floor. The car fills most of the frame, shot from standing eye height. The manufacturer badge is small in frame and partially turned away from camera.`,
   },
+  // The interior and dashboard prompts lead with the camera being INSIDE the
+  // car and say explicitly that the outside is not in shot. The earlier
+  // wording named the shot ("An interior photograph of...") and let the angle
+  // follow, which returned an exterior 22 times out of 24 — the model latched
+  // onto the car description and photographed the car. Naming the camera
+  // position first is what the two that did work had in common.
   {
     key: 'interior',
     ratio: '4:3',
     transparent: false,
-    prompt: (v) => `An interior photograph of ${v.desc}, shot from the rear seat looking forward across the front seats. Premium leather and stitching, brushed metal and open-pore wood trim, soft even daylight through the windows. No badges or lettering visible on any surface.`,
+    prompt: (v) => `A photograph taken from inside the cabin of ${v.desc}. The camera is positioned on the rear seat, inside the car, looking forward between the two front headrests. Nothing outside the car is visible except through the windscreen. The frame is filled by the backs of the front seats, the centre console between them, the dashboard ahead and the headlining above. Premium leather and stitching, brushed metal and open-pore wood trim, soft even daylight through the glass. No badges or lettering visible on any surface.`,
   },
   {
     key: 'dashboard',
     ratio: '4:3',
     transparent: false,
-    prompt: (v) => `A dashboard and steering wheel photograph of ${v.desc}, shot from the driver's door opening. Screens are switched off and completely black with no interface, no icons and no text. Leather, stitching and metal detail are sharp.`,
+    prompt: (v) => `A photograph taken from inside the cabin of ${v.desc}. The camera is positioned at the driver's seat, inside the car, looking forward and slightly down across the dashboard. Nothing outside the car is visible except through the windscreen. The frame is filled by the steering wheel, the instrument binnacle behind it, the air vents and the centre console. Screens are switched off and completely black with no interface, no icons and no text. Leather, stitching and metal detail are sharp.`,
   },
+  // Same failure mode on detail: naming the car first produced whole-car
+  // three-quarters. This one states the crop as a constraint instead.
   {
     key: 'detail',
     ratio: '4:3',
     transparent: false,
-    prompt: (v) => `A close detail photograph of ${v.desc} — the front wheel, brake caliper and lower body line, shot low and tight. Shallow depth of field. Polished alloy, tyre sidewall with no lettering, clean paint reflections of concrete architecture.`,
+    prompt: (v) => `An extreme close-up photograph of the front wheel of ${v.desc}. The camera is very close and low, at wheel hub height. The wheel and tyre fill most of the frame and are cropped by the edges of the frame. No other part of the car is in shot — no bonnet, no doors, no roof, no headlights, no windows. Shallow depth of field. Polished alloy, brake caliper visible behind the spokes, tyre sidewall with no lettering, clean paint reflections of concrete architecture.`,
   },
 ];
 
