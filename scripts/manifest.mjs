@@ -17,7 +17,8 @@ Muted desaturated colour grade. Deep blacks, clean whites, no crushed shadows.
 Materials are concrete, glass, brushed steel and polished stone.
 Architectural, calm, restrained. Quiet luxury, not flashy.
 Realistic proportions and realistic reflections. Photographic, not rendered.
-The bonnet is one continuous painted surface running unbroken to the grille. The boot lid is one continuous painted surface. Wheel centres are recessed dark hollows in shadow. Every panel of the car is smooth uninterrupted paint. The grille centre is plain mesh with nothing mounted on it. Number plate areas are smooth blank painted panels.
+The boot lid is one continuous painted surface. Every panel of the car is smooth uninterrupted paint. The grille centre is plain mesh with nothing mounted on it. Number plate areas are smooth blank painted panels.
+The entire image is near-monochrome. Greys, blacks, whites and the car's own body colour only. No gold, no chrome glint, no saturated colour anywhere in frame.
 `.trim();
 
 // ---------------------------------------------------------------------
