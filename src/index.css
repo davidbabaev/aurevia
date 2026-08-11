@@ -1,111 +1,162 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import 'tailwindcss';
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* Self-hosted from node_modules — no CDN, no external request.
+   Both are variable fonts, so one file per family covers every weight the
+   brief calls for (Manrope 600/700/800, Inter 400/500/600). */
+@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/inter';
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@theme {
+  /* Clearing Tailwind's stock palette makes the "never a raw hex, never an
+     off-palette colour" rule structural rather than a matter of discipline:
+     bg-red-500 and text-white simply do not exist after this. */
+  --color-*: initial;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-ink: #080a0d;
+  --color-graphite: #181b20;
+  --color-bg: #ffffff;
+  --color-surface: #f3f4f6;
+  --color-border: #dde1e6;
+  --color-muted: #69717c;
+  --color-accent: #74a7ff;
+  --color-sold: #b7bbc2;
+  --color-available: #2e9d69;
+
+  /* Two families only. --font-sans is aliased to the body face so anything
+     that falls through to a default still lands on Inter. */
+  --font-*: initial;
+  --font-display: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale. Unsuffixed values are the 1280px layout; -sm values are the
+     390px layout. Both are real sizes, not one scaled by a viewport unit. */
+  --text-display: 64px;
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.025em;
+  --text-display--font-weight: 800;
+
+  --text-display-sm: 40px;
+  --text-display-sm--line-height: 1.08;
+  --text-display-sm--letter-spacing: -0.022em;
+  --text-display-sm--font-weight: 800;
+
+  --text-h2: 40px;
+  --text-h2--line-height: 1.12;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h2--font-weight: 700;
+
+  --text-h2-sm: 28px;
+  --text-h2-sm--line-height: 1.15;
+  --text-h2-sm--letter-spacing: -0.018em;
+  --text-h2-sm--font-weight: 700;
+
+  --text-h3: 24px;
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.012em;
+  --text-h3--font-weight: 700;
+
+  --text-h3-sm: 20px;
+  --text-h3-sm--line-height: 1.3;
+  --text-h3-sm--letter-spacing: -0.01em;
+  --text-h3-sm--font-weight: 700;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.55;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-lg-sm: 17px;
+  --text-body-lg-sm--line-height: 1.55;
+  --text-body-lg-sm--font-weight: 400;
+
+  --text-body: 16px;
+  --text-body--line-height: 1.6;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.5;
+  --text-body-sm--font-weight: 400;
+
+  --text-caption: 13px;
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: 0.01em;
+  --text-caption--font-weight: 500;
+
+  --text-label: 12px;
+  --text-label--line-height: 1.3;
+  --text-label--letter-spacing: 0.08em;
+  --text-label--font-weight: 600;
+
+  /* Only the wordmark's subtitle rule sets type this small. */
+  --text-micro: 9px;
+  --text-micro--line-height: 1;
+  --text-micro--letter-spacing: 0.34em;
+  --text-micro--font-weight: 600;
+
+  /* 16px on the search card is the one measurement the brief fixes exactly. */
+  --radius-card: 16px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+
+  /* gutter-sm applies below 640px, where 20px is more margin than a 320px
+     viewport can spare once the nav pill is accounted for. */
+  --spacing-gutter-sm: 16px;
+  --spacing-gutter: 20px;
+  --spacing-gutter-lg: 40px;
+  --spacing-section: 96px;
+  --spacing-section-sm: 64px;
+  --spacing-section-tight: 48px;
+  /* Clears the floating nav pill on routes that do not open with a hero. */
+  --spacing-nav-clear: 128px;
+
+  --container-site: 1200px;
+  --container-narrow: 760px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
   }
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  body {
+    margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: 1.6;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Nothing in this design bleeds sideways; this keeps a stray wide child
+       from producing a horizontal scrollbar between 320 and 1920. */
+    overflow-x: hidden;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    margin: 0;
+    text-wrap: balance;
   }
-}
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  p {
+    margin: 0;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+  /* One visible focus treatment for the whole site. Components add their own
+     offset colour where they sit on a dark band. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
   }
-}
-p {
-  margin: 0;
-}
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
 }

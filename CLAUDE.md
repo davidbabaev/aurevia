@@ -18,11 +18,46 @@ template), Book a Meeting, Contact. About, Services, FAQ and legal pages
 are v2 and must not be built yet.
 
 ## 2 · Stack
-[FILL FROM package.json AFTER SCAFFOLDING. Do not guess.]
+React 19.2.8 + TypeScript 6.0.3, built by Vite 8.2.0 (rolldown).
+Routing: react-router 8.3.0, declarative `<BrowserRouter>` in src/App.tsx.
+Styling: Tailwind CSS 4.3.3 via @tailwindcss/vite. No config file — the
+  theme lives in the `@theme` block in src/index.css.
+Fonts: @fontsource-variable/manrope and /inter 5.3.0, imported in
+  index.css and bundled. Self-hosted; never add a CDN font link.
+React Compiler is on (babel-plugin-react-compiler via @rolldown/plugin-babel).
 No test framework. The gate is `npm run build` passing.
 
+Commands: `npm run dev` · `npm run build` · `npm run lint` · `npm run preview`
+
+Tailwind notes that will bite you:
+- `--color-*: initial` clears the stock palette. `bg-red-500`, `text-white`
+  and `bg-transparent` do not exist. Use the nine tokens.
+- Tailwind only sees complete class strings. Never build a utility by
+  interpolation (`bg-${name}`) — map it explicitly.
+
 ## 3 · Structure
-[FILL FROM THE REAL TREE ON DISK AFTER SCAFFOLDING.]
+```
+docs/reference/     approved wireframes + brand sheet — read before building
+src/
+  index.css         @theme tokens: colour, type scale, radius, spacing
+  main.tsx          root render
+  App.tsx           routes
+  components/       primitives, one per file, named to match
+    Button · Container · Section · Icon · StatusPill
+    Nav · Footer · SiteLayout · Wordmark · PlaceholderPage
+  lib/
+    contrast.ts     WCAG maths; reads live token values off :root
+    tokens.ts       palette / contrast-pair / type-scale registries
+  pages/            Home · Vehicles · Brand · VehicleDetail
+                    BookAMeeting · Contact · StyleGuide
+.claude/hooks/      Bash PreToolUse gates — see section 6
+```
+Routes: `/` `/vehicles` `/vehicles/:slug` `/brands/:brand`
+  `/book-a-meeting` `/contact` `/styleguide`
+
+`/styleguide` is the review gate. It computes every contrast ratio in the
+browser from the live tokens. Change a colour token and check it there
+before anything else. Vehicle content files do not exist yet.
 
 ## 4 · Design direction
 
