@@ -59,12 +59,28 @@ Routes: `/` `/vehicles` `/vehicles/:slug` `/brands/:brand`
 browser from the live tokens. Change a colour token and check it there
 before anything else. Vehicle content files do not exist yet.
 
+
 ## 4 · Design direction
 
 Reference: A premium multi-brand car showroom in the style of a modern
   rental/fleet site — floating white pill nav, cinematic showroom hero,
   four brand image cards, horizontal vehicle cards, alternating
   white / light-gray / obsidian section rhythm.
+  
+Wireframes — docs/reference/:
+  home-desktop-full.png       APPROVED TARGET for the Home page.
+  vehicle-detail-desktop.png  APPROVED TARGET for /vehicles/:slug.
+  home-alt-1.png              Same design, alternate crop. Secondary.
+  home-alt-3.png              Same design, alternate crop. Secondary.
+  source-template.jpg         The template this derives from.
+                              Structural reference only — its content
+                              is a rental company.
+  brand-logo-sheet.png        Aurevia logo, all four official versions.
+
+  LOOK at the approved target before building any section of that page.
+  Match structure, proportion and section rhythm exactly.
+  Layout reference only — never copy the source template's
+  white-on-blue button treatment, which measures 2.41:1 and fails.
 
 Signature: The search bar. A white card, radius 16px, overlapping the
   bottom edge of the hero image by exactly 40% of its own height, with a
