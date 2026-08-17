@@ -77,6 +77,21 @@ Wireframes — docs/reference/:
                               Structural reference only — its content
                               is a rental company.
   brand-logo-sheet.png        Aurevia logo, all four official versions.
+  
+  vehicles-desktop.png notes — the mockup shows a larger inventory than
+  exists. Build the components, drive them from real data:
+  - Body style tiles: render from the actual vehicle types present
+    (Sedan, SUV, Sports — three, not the mockup's six). Counts are
+    computed, never hardcoded.
+  - Pagination: build it, page size 12. It renders only when there is
+    more than one page, so it is hidden at current inventory.
+  - The vehicle grid shows the twelve real vehicles from
+    src/data/vehicles.ts. Never invent a car to fill the layout.
+  - The "Want to buy or sell a vehicle?" section is NOT built —
+    Aurevia does not accept listings from the public (§19). The page
+    goes from pagination straight to the value band.
+  - Mileage is not shown on vehicles marked New.
+  
 
   LOOK at the approved target before building any section of that page.
   Match structure, proportion and section rhythm exactly.
