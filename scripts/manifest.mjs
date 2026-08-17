@@ -248,9 +248,17 @@ const SITE_SLOTS = [
 //
 // These are keyed through remove.bg and composited onto a CSS gradient, so
 // the backdrop only ever has to be clean — it is never seen.
+//
+// The direction is stated as its own sentence. "Front three-quarter view"
+// describes the angle but says nothing about which way the car points, and
+// the model mirrored 9 of the 48 colour variants — a swatch row where the car
+// flips direction between clicks reads as a different car, not a repaint.
+// Naming the direction positively is what fixed the same failure on
+// hero-home, where describing what the frame should contain worked and
+// listing what it should not did not.
 // ---------------------------------------------------------------------
 const cutOutPrompt = (description) =>
-  `A studio product photograph of ${description}, front three-quarter view, standing against a completely flat, featureless field of DARK CHARCOAL GREY. The background is the critical part of this brief. Every pixel that is not the car is the same dark charcoal grey, RGB(70,70,70) — the tone of a charcoal grey painted studio wall, definitely dark, closer to black than to white, never a light grey and never a bright studio sweep. It is that identical grey corner to corner and edge to edge, behind the car and under it: no gradient, no vignette, no falloff, no brighter pool behind the car, no floor, no horizon, no wall-to-floor curve, no shadow beneath or behind the car and no reflection under it. The car floats against an even charcoal field. Even shadowless studio lighting on the car itself. The car is fully in frame with a small margin on all sides.`;
+  `A studio product photograph of ${description}, front three-quarter view. The front of the car points to the LEFT of frame. It stands against a completely flat, featureless field of DARK CHARCOAL GREY. The background is the critical part of this brief. Every pixel that is not the car is the same dark charcoal grey, RGB(70,70,70) — the tone of a charcoal grey painted studio wall, definitely dark, closer to black than to white, never a light grey and never a bright studio sweep. It is that identical grey corner to corner and edge to edge, behind the car and under it: no gradient, no vignette, no falloff, no brighter pool behind the car, no floor, no horizon, no wall-to-floor curve, no shadow beneath or behind the car and no reflection under it. The car floats against an even charcoal field. Even shadowless studio lighting on the car itself. The car is fully in frame with a small margin on all sides.`;
 
 // Brand cards — 3:4 portrait, architectural, matching the wireframe.
 const BRAND_CARDS = [
