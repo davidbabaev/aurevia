@@ -33,5 +33,9 @@ __pycache__/
 # retuned without paying for 70 more generations; never committed.
 public/images/_raw/
 
+# remove.bg output. Metered — kept on disk so a retrim or a WebP quality
+# change cannot spend another credit; never committed.
+public/images/_keyed/
+
 # Contact sheets from scripts/verify-cutouts.mjs. Regenerated on demand.
 .verify*/
