@@ -2,17 +2,17 @@
 // Every slot the site needs. Consumed by scripts/generate-images.mjs
 //
 // RATIOS: Gemini accepts only 1:1, 3:4, 4:3, 9:16, 16:9. No 3:2.
-// TRANSPARENCY: cars are generated on FLAT MID-GREY seamless, then keyed
-//   to alpha by the script. Models do not emit reliable alpha directly.
-//   Mid-grey, not white: a flood fill separates background from subject by
-//   colour distance, and a white or silver car on a white backdrop has no
-//   distance to measure — the fill walks straight through the roof, doors
-//   and bonnet. Against RGB(128,128,128) every body colour in the set,
-//   white included, sits far enough away to key cleanly.
+// TRANSPARENCY: cars are generated on a DARK CHARCOAL seamless and keyed to
+//   alpha by remove.bg. Models do not emit reliable alpha directly.
+//   The backdrop still matters even though the keying is no longer a local
+//   colour measurement: a clean, even, unambiguous field is what any keyer
+//   does best on, and charcoal is the one value that is far from white paint,
+//   silver paint and black paint at once. The value asked for is below the
+//   value wanted — see the note on the card slots.
 
 // ---------------------------------------------------------------------
 // The style clause. Appended VERBATIM to every prompt.
-// One visual register across all 70 images is what makes them read as
+// One visual register across all 71 images is what makes them read as
 // one photographer. Never edit this per-image.
 // ---------------------------------------------------------------------
 export const STYLE = `
@@ -109,7 +109,14 @@ const SITE_SLOTS = [
     file: 'hero/home-hero.png',
     ratio: '16:9',
     transparent: false,
-    prompt: `A wide cinematic photograph of a single white four-door luxury coupe seen from a FRONT THREE-QUARTER angle, the front of the car facing left of camera, standing alone on a vast polished near-black showroom floor. Tall concrete columns and floor-to-ceiling glazing are far behind it and out of focus. The car sits in the RIGHT HALF of the frame. CRITICAL COMPOSITION: the left half of the frame contains only empty polished dark floor receding into darkness. No columns, no walls, no structure of any kind in the left half. Headline text goes there. Soft daylight from the left.`,
+    // The left half is a text well, not scenery. The earlier wording banned
+    // columns and walls but still allowed "structure … far behind it", and the
+    // model read the glazing as fair game: bright concrete columns filled the
+    // left half and the white headline had nothing to sit on. Glazing and
+    // bright surfaces are now named, and the left half is described by what it
+    // does contain — floor, nothing else — rather than by a list of what it
+    // must not.
+    prompt: `A wide cinematic photograph of a single white four-door luxury coupe seen from a FRONT THREE-QUARTER angle, the front of the car facing left of camera, standing alone on a vast polished near-black showroom floor. The car sits in the RIGHT HALF of the frame. CRITICAL COMPOSITION: the left half of the frame is entirely empty polished dark floor receding into blackness. No columns, no walls, no glazing, no structure and no bright surfaces anywhere in the left half. Only the floor. Headline text goes there. Soft daylight from the left.`,
   },
   {
     id: 'cta-showroom',
@@ -117,6 +124,18 @@ const SITE_SLOTS = [
     ratio: '16:9',
     transparent: false,
     prompt: `A wide photograph of a black Porsche Taycan in a very dark private viewing room. Dramatic low-key lighting picks out only the car's shoulder line, roof edge and wheels; the surroundings fall away into near black. CRITICAL COMPOSITION: the left third of the frame is almost pure black empty space for text. The car occupies the centre and right.`,
+  },
+  // The statement band on the home page — copy and buttons left, one large
+  // car right. Keyed to alpha like the cards because it sits on the light
+  // surface panel, but shot far bigger: the cards are thumbnails, this one
+  // carries the section on its own. Same charcoal backdrop clause as the
+  // cut-outs, for the same reason — see the note on the card slots below.
+  {
+    id: 'statement-s-class',
+    file: 'hero/statement-s-class.png',
+    ratio: '4:3',
+    transparent: true,
+    prompt: `A studio photograph of a black long-wheelbase luxury saloon with chrome window surrounds and large multi-spoke alloy wheels, seen almost side-on and angled slightly toward the camera, the front of the car pointing to the LEFT of frame. The camera is low, at about headlight height, and the car fills the frame corner to corner — imposing and cinematic rather than a small catalogue thumbnail. The whole car is in frame from front bumper to rear bumper with a small margin on all sides. It stands against a completely flat, featureless field of DARK CHARCOAL GREY. Every pixel that is not the car is the same dark charcoal grey, RGB(70,70,70) — the tone of a charcoal grey painted studio wall, definitely dark, closer to black than to white, never a light grey and never a bright studio sweep. It is that identical grey corner to corner and edge to edge, behind the car and under it: no gradient, no vignette, no falloff, no brighter pool behind the car, no floor, no horizon, no wall-to-floor curve, no shadow beneath or behind the car and no reflection under it. The car floats against an even charcoal field. Even shadowless studio lighting on the car itself.`,
   },
 ];
 
@@ -186,5 +205,5 @@ export const SLOTS = [
   ),
 ];
 
-// 2 + 4 + 4 + 12 + 48 = 70
+// 3 + 4 + 4 + 12 + 48 = 71
 export const TOTAL = SLOTS.length;
