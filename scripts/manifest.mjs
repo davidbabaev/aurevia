@@ -115,11 +115,19 @@ const MIDNIGHT_BLACK = {
     'midnight black metallic — black paint with only a faint cool undertone in the highlights, never a blue body colour',
 };
 
-// The four alternatives for one car: the standard swatches minus any that
-// duplicate its own family, topped up with midnight black.
+// The alternatives for one car: the standard swatches minus any that would
+// repeat its own paint, topped up with midnight black.
+//
+// The top-up is skipped for a car that is already black. Midnight black next
+// to obsidian, mythos, carbon or jet black is two chips the eye cannot tell
+// apart — a swatch that changes nothing when clicked is worse than one fewer
+// swatch. Those four ship four swatches; the other eight ship five. The row
+// is data-driven, so the count comes from here and the component does not
+// care.
 export const swatchesFor = (v) => {
   const kept = COLOUR_SWATCHES.filter((c) => c.family !== v.family);
-  return kept.length === COLOUR_SWATCHES.length ? kept : [...kept, MIDNIGHT_BLACK];
+  if (kept.length === COLOUR_SWATCHES.length || v.family === 'black') return kept;
+  return [...kept, MIDNIGHT_BLACK];
 };
 
 // ---------------------------------------------------------------------

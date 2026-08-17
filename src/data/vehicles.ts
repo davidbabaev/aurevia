@@ -83,7 +83,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1041',
     description:
       'The long-wheelbase S-Class is the quietest car in our showroom. It rides on air suspension that reads the road ahead, and the rear cabin is closer to a private room than a back seat. Finished in obsidian black over a cream interior, with chrome window surrounds and multi-spoke alloys.',
-    colours: ['obsidian black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
+    colours: ['obsidian black metallic', 'graphite grey', 'glacier white', 'silver'],
     specs: {
       engine: '4.0-litre twin-turbo V8 with mild hybrid',
       power: '496 hp',
@@ -270,7 +270,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1046',
     description:
       'Electric, and not apologetic about it. The RS e-tron GT delivers its full torque instantly and silently, which takes most people one launch to adjust to. Mythos black, with a closed front and a stance wide enough to look planted standing still.',
-    colours: ['mythos black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
+    colours: ['mythos black metallic', 'graphite grey', 'glacier white', 'silver'],
     specs: {
       engine: 'Dual electric motors, 93 kWh battery',
       power: '637 hp',
@@ -346,7 +346,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1048',
     description:
       'Seven seats, and the third row is one adults will actually sit in. The X7 is the largest car in our showroom and hides it well on the move, thanks to air suspension on both axles. Carbon black metallic, with split headlights and chrome trim.',
-    colours: ['carbon black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
+    colours: ['carbon black metallic', 'graphite grey', 'glacier white', 'silver'],
     specs: {
       engine: '3.0-litre turbocharged inline-six with mild hybrid',
       power: '375 hp',
@@ -459,7 +459,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1051',
     description:
       'The Cayenne Coupe trades a little practicality for a considerably better profile, and the V8 makes a sound no electric SUV can match. Jet black metallic with body-coloured arches and polished alloys, over a black interior.',
-    colours: ['jet black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
+    colours: ['jet black metallic', 'graphite grey', 'glacier white', 'silver'],
     specs: {
       engine: '4.0-litre twin-turbo V8',
       power: '468 hp',
