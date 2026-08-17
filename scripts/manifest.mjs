@@ -12,7 +12,7 @@
 
 // ---------------------------------------------------------------------
 // The style clause. Appended VERBATIM to every prompt.
-// One visual register across all 71 images is what makes them read as
+// One visual register across all 155 images is what makes them read as
 // one photographer. Never edit this per-image.
 // ---------------------------------------------------------------------
 export const STYLE = `
@@ -68,7 +68,11 @@ const VEHICLE_PARTS = [
 
   { slug: 'porsche-taycan',             brand: 'Porsche',       type: 'sedan',  lead: 'a Porsche Taycan electric sports saloon',              colour: 'volcano grey metallic',   family: 'grey',   tail: ', very low roofline, full-width light bar' },
   { slug: 'porsche-cayenne',            brand: 'Porsche',       type: 'suv',    lead: 'a Porsche Cayenne SUV',                                colour: 'jet black metallic',      family: 'black',  tail: ', sloping roof, body-coloured arches, polished alloys' },
-  { slug: 'porsche-911-carrera',        brand: 'Porsche',       type: 'sports', lead: 'a Porsche 911 Carrera coupe',                          colour: 'agate grey metallic',     family: 'grey',   tail: ', classic round headlights, wide rear body, centre-lock wheels' },
+  // "classic round headlights" pulled three of the five swatches to an
+  // air-cooled-era car while the card and obsidian black stayed modern, so the
+  // row showed two different 911s. The generation is now pinned by name and by
+  // the details only the current car has.
+  { slug: 'porsche-911-carrera',        brand: 'Porsche',       type: 'sports', lead: 'a current-generation Porsche 911 Carrera 992 coupe',   colour: 'agate grey metallic',     family: 'grey',   tail: ', modern LED headlights, full-width rear light bar, flush pop-out door handles, wide rear body, centre-lock wheels' },
 ];
 
 // The car described in a given colour. Passing the car's own colour gives
@@ -78,12 +82,18 @@ const describe = (v, colour) => `${v.lead} in ${colour}${v.tail}`;
 export const VEHICLES = VEHICLE_PARTS.map((v) => ({ ...v, desc: describe(v, v.colour) }));
 
 // ---------------------------------------------------------------------
-// Exterior colour swatches. Four standard finishes, plus deep navy as the
+// Exterior colour swatches. Four standard finishes, plus a fifth as the
 // stand-in whenever one of the four would just repeat the car's own paint —
 // which, as it happens, is every car in the set: four are black, four white
-// and four grey. Navy is specified as near-black on purpose. A saturated
-// blue would be the only colour in the whole library and would break the
-// near-monochrome clause in STYLE.
+// and four grey.
+//
+// That fifth was deep navy, qualified as "so dark it reads almost black
+// rather than blue". It came back blue on all twelve — measured at up to
+// 4.8% saturated pixels, the most colourful frames in the library, against a
+// STYLE clause that allows no saturated colour anywhere. Asking for a colour
+// and then asking for it not to look like that colour does not work; the
+// qualifier loses to the colour word. So the colour word itself is now black,
+// and the undertone is the qualifier rather than the other way round.
 //
 // `name` is what the site shows and `prompt` is what the model is given;
 // they differ only where the model needs the extra steer.
@@ -95,22 +105,26 @@ const COLOUR_SWATCHES = [
   { name: 'silver',         slug: 'silver',         family: 'silver', prompt: 'silver metallic' },
 ];
 
-const DEEP_NAVY = {
-  name: 'deep navy',
-  slug: 'deep-navy',
-  family: 'navy',
-  prompt: 'deep navy metallic so dark it reads almost black rather than blue',
+const MIDNIGHT_BLACK = {
+  name: 'midnight black',
+  slug: 'midnight-black',
+  // Its own family, so it is never filtered out as a duplicate — it is the
+  // top-up, not one of the four.
+  family: 'midnight',
+  prompt:
+    'midnight black metallic — black paint with only a faint cool undertone in the highlights, never a blue body colour',
 };
 
 // The four alternatives for one car: the standard swatches minus any that
-// duplicate its own family, topped up with navy.
+// duplicate its own family, topped up with midnight black.
 export const swatchesFor = (v) => {
   const kept = COLOUR_SWATCHES.filter((c) => c.family !== v.family);
-  return kept.length === COLOUR_SWATCHES.length ? kept : [...kept, DEEP_NAVY];
+  return kept.length === COLOUR_SWATCHES.length ? kept : [...kept, MIDNIGHT_BLACK];
 };
 
 // ---------------------------------------------------------------------
-// Per-vehicle gallery shots. 4 per car = 48 images.
+// Per-vehicle gallery shots. 5 per car = 60 images. With the 2 lifestyle
+// shots below that gives the six thumbnails the wireframe strip holds.
 // ---------------------------------------------------------------------
 const GALLERY_SHOTS = [
   {
@@ -145,15 +159,13 @@ const GALLERY_SHOTS = [
     transparent: false,
     prompt: (v) => `An extreme close-up photograph of the front wheel of ${v.desc}. The camera is very close and low, at wheel hub height. The wheel and tyre fill most of the frame and are cropped by the edges of the frame. No other part of the car is in shot — no bonnet, no doors, no roof, no headlights, no windows. Shallow depth of field. Polished alloy, brake caliper visible behind the spokes, tyre sidewall with no lettering, clean paint reflections of concrete architecture.`,
   },
-  // The rear deliberately mirrors the exterior shot word for word apart from
-  // the angle. The two sit side by side in the gallery strip, so a different
-  // showroom or a different light would read as two different days.
-  {
-    key: 'rear',
-    ratio: '4:3',
-    transparent: false,
-    prompt: (v) => `A three-quarter REAR exterior photograph of ${v.desc}, parked inside a modern minimalist concrete showroom with floor-to-ceiling glazing and a polished dark floor. The camera is behind the car and to one side, looking at the rear bumper and the back of the roof. The car fills most of the frame, shot from standing eye height. The manufacturer badge is small in frame and partially turned away from camera.`,
-  },
+  // There is no rear shot, and that is deliberate. A rear three-quarter points
+  // the camera at the two things STYLE spends its length avoiding: the model
+  // lettering across the tailgate and the tail lights. Of twelve generated,
+  // four carried readable lettering, six had saturated red lamps and one came
+  // back as the wrong generation of 911. The gallery ships six per car
+  // without it, which is what the wireframe's thumbnail strip holds anyway.
+  //
   // Second detail. Same trick as the wheel crop: state the crop as a hard
   // constraint first, because naming the car first returns a whole-car
   // three-quarter every time.
@@ -313,7 +325,7 @@ export const SLOTS = [
     }))
   ),
 
-  // 72 gallery shots (6 per car)
+  // 60 gallery shots (5 per car)
   ...VEHICLES.flatMap((v) =>
     GALLERY_SHOTS.map((s) => ({
       id: `${v.slug}-${s.key}`,
@@ -337,5 +349,5 @@ export const SLOTS = [
 ];
 
 
-// 3 + 4 + 4 + 12 + 48 + 72 + 24 = 167
+// 3 + 4 + 4 + 12 + 48 + 60 + 24 = 155
 export const TOTAL = SLOTS.length;

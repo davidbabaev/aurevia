@@ -83,7 +83,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1041',
     description:
       'The long-wheelbase S-Class is the quietest car in our showroom. It rides on air suspension that reads the road ahead, and the rear cabin is closer to a private room than a back seat. Finished in obsidian black over a cream interior, with chrome window surrounds and multi-spoke alloys.',
-    colours: ['obsidian black metallic', 'graphite grey', 'glacier white', 'silver', 'deep navy'],
+    colours: ['obsidian black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: '4.0-litre twin-turbo V8 with mild hybrid',
       power: '496 hp',
@@ -120,7 +120,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1042',
     description:
       'A family SUV that behaves like something considerably smaller. The AMG straight-six pulls hard from low revs, and the air suspension keeps the body flat through corners without punishing anyone in the back. Polar white with a dark grille, dark alloys and red brake calipers.',
-    colours: ['polar white', 'obsidian black', 'graphite grey', 'silver', 'deep navy'],
+    colours: ['polar white', 'obsidian black', 'graphite grey', 'silver', 'midnight black'],
     specs: {
       engine: '3.0-litre turbocharged inline-six with electric assist',
       power: '429 hp',
@@ -157,7 +157,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1043',
     description:
       'Four doors, four seats, and a V8 that makes no attempt to be discreet. The GT 63 sits low and wide, with rear-axle steering that makes it far more agile than its size suggests. Matte graphite grey over black, on dark forged wheels.',
-    colours: ['matte graphite grey', 'obsidian black', 'glacier white', 'silver', 'deep navy'],
+    colours: ['matte graphite grey', 'obsidian black', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: '4.0-litre twin-turbo V8',
       power: '577 hp',
@@ -196,7 +196,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1044',
     description:
       'The A7 solves a problem most saloons ignore: the boot. Its fastback tailgate opens to a genuinely useful load space without spoiling the roofline. Daytona grey, with a full-width rear light bar and a cabin trimmed in dark leather and open-pore wood.',
-    colours: ['daytona grey', 'obsidian black', 'glacier white', 'silver', 'deep navy'],
+    colours: ['daytona grey', 'obsidian black', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: '3.0-litre turbocharged V6 with mild hybrid',
       power: '335 hp',
@@ -233,7 +233,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1045',
     description:
       'A coupe roofline on a full-size SUV, which usually means a compromise somewhere. Here it costs a little rear headroom and buys a car that looks considerably lower than it is. Glacier white with black lower cladding and large polished alloys.',
-    colours: ['glacier white', 'obsidian black', 'graphite grey', 'silver', 'deep navy'],
+    colours: ['glacier white', 'obsidian black', 'graphite grey', 'silver', 'midnight black'],
     specs: {
       engine: '3.0-litre turbocharged V6 with mild hybrid',
       power: '335 hp',
@@ -270,7 +270,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1046',
     description:
       'Electric, and not apologetic about it. The RS e-tron GT delivers its full torque instantly and silently, which takes most people one launch to adjust to. Mythos black, with a closed front and a stance wide enough to look planted standing still.',
-    colours: ['mythos black metallic', 'graphite grey', 'glacier white', 'silver', 'deep navy'],
+    colours: ['mythos black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: 'Dual electric motors, 93 kWh battery',
       power: '637 hp',
@@ -309,7 +309,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1047',
     description:
       'The i4 M50 is the easiest car here to recommend to someone moving to electric for the first time. It drives like a 4 Series, charges quickly enough for real journeys, and the M-tuned chassis makes it genuinely quick. Mineral white with a closed grille and dark trim.',
-    colours: ['mineral white', 'obsidian black', 'graphite grey', 'silver', 'deep navy'],
+    colours: ['mineral white', 'obsidian black', 'graphite grey', 'silver', 'midnight black'],
     specs: {
       engine: 'Dual electric motors, 81 kWh battery',
       power: '536 hp',
@@ -346,7 +346,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1048',
     description:
       'Seven seats, and the third row is one adults will actually sit in. The X7 is the largest car in our showroom and hides it well on the move, thanks to air suspension on both axles. Carbon black metallic, with split headlights and chrome trim.',
-    colours: ['carbon black metallic', 'graphite grey', 'glacier white', 'silver', 'deep navy'],
+    colours: ['carbon black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: '3.0-litre turbocharged inline-six with mild hybrid',
       power: '375 hp',
@@ -383,7 +383,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1049',
     description:
       'The M4 Competition is the most focused car in the showroom and makes no secret of it. With xDrive it is usable year-round, and the rear-drive mode is still there when the road is dry. Brilliant white with a carbon roof, wide arches and dark forged wheels.',
-    colours: ['brilliant white', 'obsidian black', 'graphite grey', 'silver', 'deep navy'],
+    colours: ['brilliant white', 'obsidian black', 'graphite grey', 'silver', 'midnight black'],
     specs: {
       engine: '3.0-litre twin-turbo inline-six',
       power: '523 hp',
@@ -422,7 +422,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1050',
     description:
       'The Taycan is the electric car that convinced sceptics, largely because it drives like a Porsche first and an EV second. Its 800-volt architecture charges faster than almost anything else on the road. Volcano grey, sitting very low, with a full-width light bar.',
-    colours: ['volcano grey metallic', 'obsidian black', 'glacier white', 'silver', 'deep navy'],
+    colours: ['volcano grey metallic', 'obsidian black', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: 'Dual electric motors, 105 kWh battery',
       power: '536 hp',
@@ -459,7 +459,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1051',
     description:
       'The Cayenne Coupe trades a little practicality for a considerably better profile, and the V8 makes a sound no electric SUV can match. Jet black metallic with body-coloured arches and polished alloys, over a black interior.',
-    colours: ['jet black metallic', 'graphite grey', 'glacier white', 'silver', 'deep navy'],
+    colours: ['jet black metallic', 'graphite grey', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: '4.0-litre twin-turbo V8',
       power: '468 hp',
@@ -496,7 +496,7 @@ export const VEHICLES: Vehicle[] = [
     stockNumber: 'AUR-1052',
     description:
       'Sixty years of iteration and the engine is still in the wrong place, which is exactly why it drives the way it does. The 911 remains usable every day in a way its rivals are not. Agate grey metallic, on centre-lock wheels, with a black interior.',
-    colours: ['agate grey metallic', 'obsidian black', 'glacier white', 'silver', 'deep navy'],
+    colours: ['agate grey metallic', 'obsidian black', 'glacier white', 'silver', 'midnight black'],
     specs: {
       engine: '3.0-litre twin-turbo flat-six',
       power: '473 hp',
