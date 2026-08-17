@@ -82,19 +82,56 @@ export const HOME = {
   },
 } as const;
 
+// ── Shared across grids ──────────────────────────────────────────
+export const CARD = {
+  viewVehicle: 'View vehicle',
+} as const;
+
+export const PAGINATION = {
+  previous: 'Previous page',
+  next: 'Next page',
+  page: (n: number) => `Page ${n}`,
+  current: (n: number, total: number) => `Page ${n} of ${total}`,
+} as const;
+
 // ── Vehicles / inventory ─────────────────────────────────────────
 export const VEHICLES_PAGE = {
   heading: 'All vehicles',
   support: 'Twelve vehicles from four manufacturers, all available to view by appointment.',
   resultCount: (n: number) => `${n} ${n === 1 ? 'vehicle' : 'vehicles'}`,
+  eyebrow: 'Premium automotive gallery',
+  primaryCta: 'Browse inventory',
+  secondaryCta: 'Book a meeting',
+
+  bodyStyle: {
+    heading: 'Browse by body style',
+    // The mockup hardcodes six styles and invented counts. Three body styles
+    // exist in the data and the count is computed (section 4).
+    count: (n: number) => `${n} ${n === 1 ? 'vehicle' : 'vehicles'}`,
+  },
+
+  available: {
+    heading: 'Available vehicles',
+    tabs: ['All vehicles', 'New arrivals', 'Featured'],
+  },
+
   filters: {
     heading: 'Filter',
     clear: 'Clear all',
+    reset: 'Reset filters',
+    submit: 'Search vehicles',
+    keyword: 'Keyword',
+    keywordPlaceholder: 'Search by keyword',
     brand: 'Brand',
     type: 'Vehicle type',
     fuel: 'Fuel type',
     price: 'Price range',
     year: 'Year',
+    anyBrand: 'Any brand',
+    anyType: 'Any type',
+    anyFuel: 'Any fuel',
+    anyPrice: 'Any price',
+    anyYear: 'Any year',
   },
   sort: {
     label: 'Sort by',
@@ -143,17 +180,25 @@ export const BRANDS = {
 // ── Vehicle detail ───────────────────────────────────────────────
 export const VEHICLE_DETAIL = {
   contactForPrice: 'Contact for price',
+  startingPrice: 'Starting price',
   primaryCta: 'Book a meeting',
   secondaryCtas: {
     call: 'Call sales',
     whatsapp: 'WhatsApp',
     enquire: 'Request information',
   },
+  breadcrumb: { home: 'Home', vehicles: 'Vehicles' },
+
+  // Reviews appear in the mockup's tab row. No review data exists and none
+  // may be invented (section 5), so the tab is not built.
+  tabs: ['Overview', 'Features', 'Specifications', 'Gallery'],
+
   sections: {
     specs: 'Specifications',
     features: 'Features and equipment',
     description: 'About this vehicle',
     similar: 'Similar vehicles',
+    gallery: 'Every angle tells a story',
   },
   featureGroups: {
     safety: 'Safety',
@@ -165,7 +210,43 @@ export const VEHICLE_DETAIL = {
     exterior: 'Exterior',
     interior: 'Interior',
     dashboard: 'Dashboard',
-    detail: 'Detail',
+    detail: 'Wheel detail',
+    'detail-2': 'Headlight detail',
+    road: 'On the road',
+    architecture: 'At the showroom',
+  },
+
+  colourRow: { label: 'Exterior colour' },
+
+  // The four figures on the strip beside the colour swatches.
+  quickSpecs: {
+    acceleration: '0–60 mph',
+    topSpeed: 'Top speed',
+    power: 'Power',
+    drivetrain: 'Drivetrain',
+  },
+
+  specGroups: {
+    performance: 'Performance',
+    vehicle: 'Vehicle',
+    details: 'Details',
+  },
+  specLabels: {
+    engine: 'Engine',
+    power: 'Power',
+    acceleration: '0–60 mph',
+    topSpeed: 'Top speed',
+    transmission: 'Transmission',
+    drivetrain: 'Drivetrain',
+    fuel: 'Fuel',
+    bodyStyle: 'Body style',
+    seats: 'Seats',
+    doors: 'Doors',
+    year: 'Year',
+    condition: 'Condition',
+    exteriorColour: 'Exterior',
+    interiorColour: 'Interior',
+    stockNumber: 'Stock number',
   },
   stockLabel: 'Stock number',
 } as const;
