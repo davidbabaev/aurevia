@@ -70,6 +70,7 @@ Reference: A premium multi-brand car showroom in the style of a modern
 Wireframes — docs/reference/:
   home-desktop-full.png       APPROVED TARGET for the Home page.
   vehicle-detail-desktop.png  APPROVED TARGET for /vehicles/:slug.
+  vehicles-desktop.png        APPROVED TARGET for /vehicles.
   home-alt-1.png              Same design, alternate crop. Secondary.
   home-alt-3.png              Same design, alternate crop. Secondary.
   source-template.jpg         The template this derives from.
