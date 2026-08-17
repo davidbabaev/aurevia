@@ -32,3 +32,6 @@ __pycache__/
 # Untouched model output. Kept on disk so keying and WebP quality can be
 # retuned without paying for 70 more generations; never committed.
 public/images/_raw/
+
+# Contact sheets from scripts/verify-cutouts.mjs. Regenerated on demand.
+.verify*/

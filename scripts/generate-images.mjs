@@ -51,38 +51,74 @@ const BACKOFF_MS = [2_000, 6_000]
 const USD_PER_IMAGE = Number(process.env.IMAGE_USD_EACH ?? 0.039)
 
 // --- background keying -------------------------------------------------
-// The background is found by flood filling inward from the corners, never by
-// thresholding the whole image: a white car body is light but is not
-// connected to the frame edge, so connectivity is what protects it.
+// The backdrop is a flat mid-grey seamless, asked for in the manifest prompt.
+// That choice is the whole fix. Keying is a distance measurement, and on a
+// white seamless a white or silver car has no distance from its background —
+// the fill walked through the roof, doors and bonnet of every light car in the
+// set and left holes. Against mid-grey the nearest body colour in the set is
+// still tens of levels away, so the fill has something to stop at.
 //
-// The threshold is derived per image rather than fixed. A fixed 236 failed on
-// all 12 cut-outs because the model's "white seamless" carries a vignette —
-// most of the backdrop sits below 236, so the fill never reached the car and
-// only a band along the bottom came away.
+// Two things separate backdrop from car, and both must agree:
+//   1. a tight STEP between a pixel and the neighbour the fill arrived from —
+//      the backdrop is smooth, so the fill walks it freely, and the silhouette
+//      is a step change of tens of levels across two or three pixels, which no
+//      tight step tolerance can cross;
+//   2. a generous BAND around the backdrop sampled off the corners, which no
+//      body colour in the set falls inside. This is the rail, not the
+//      discriminator — it exists so a leak can never reach a white roof.
+//
+// The band has to stay tight, and that is only possible if it is measured
+// against a backdrop that drifts. The prompt asks for RGB(128,128,128) edge to
+// edge; the model returns a light grey with a soft floor, corners landing
+// 155–188 and the field drifting up to 44 levels top to bottom. Widening the
+// band to swallow that drift is what let the fill walk the whole white flank
+// of the Q8 — at ±58 around 165 a glacier-white door panel at 210 counts as
+// backdrop. So the drift is fitted instead: a quadratic surface per channel,
+// least-squares over the pixels a first tight pass already proved are
+// backdrop, and the real band is then measured against that surface.
 const CORNER_SAMPLE = 16
-// Tolerances tried below the sampled corner level, tightest first.
-const TOLERANCES = [4, 8, 12, 16, 20, 26, 32, 40, 50, 62, 76, 92]
+// Per-channel step between adjacent pixels, tightest first. The backdrop's own
+// noise measures 2–3, so the first entry keys every image; the tail is
+// headroom for a grainier frame, not the plan.
+const STEPS = [4, 5, 6, 8]
+// Band for the first pass, which only has the flat corner value to work with.
+// It keys the part of the backdrop that has not drifted yet — enough of a
+// sample to fit the surface from.
+const SEED_BAND = 24
+// Band around the fitted surface. This is the rail that keeps the fill off the
+// car, and it is tight on purpose: the nearest body panel in the set sits
+// about 30 levels off its local backdrop, so 20 clears it.
+const FIELD_BAND = 20
+// A first pass covering less than this has not sampled enough backdrop for the
+// fit to mean anything; fall back to the flat corner value.
+const SEED_FLOOR = 0.15
 // A fill covering more than this is eating the car, not the backdrop.
 const FILL_CEILING = 0.94
-// A jump this large between consecutive tolerances means the fill just leaked
+// A jump this large between consecutive steps means the fill just leaked
 // through the silhouette. Take the step before it.
-const FILL_LEAK_JUMP = 0.14
+const FILL_LEAK_JUMP = 0.10
 // Below this the fill has clearly not reached round the car yet.
 const FILL_FLOOR = 0.12
-// The fill refuses to cross a pixel whose local gradient exceeds this. Level
-// alone cannot separate a white roof from a white backdrop — they are the same
-// brightness — but the boundary between them is a hard edge and the backdrop
-// is smooth. Without this the fill runs over the roof of the white cars and
-// eats the glass from the inside.
-const EDGE_GUARD = 16
-// Opaque islands smaller than this are keying specks, not the car. Left in,
-// a single stray corner pixel drags the trim box out to the frame edge.
+// A backdrop whose corners disagree by more than this is not the flat field
+// the prompt asked for. Keying still runs; the log says so.
+const CORNER_SPREAD_WARN = 10
+// Opaque islands smaller than this are keying specks, not the car.
 const SPECK_FRACTION = 0.01
-// The fill can still leak into a white car through the roof, where body and
-// backdrop are the same brightness and the boundary is soft. It gets in
-// through a narrow neck, so opening the background mask by this radius severs
-// anything thinner than 2x it while leaving the real backdrop untouched.
-const MASK_OPEN_RADIUS = 7
+// Insurance against a leak through a narrow neck: erode the background mask,
+// keep only what still reaches the frame edge, dilate back. Was 7 against
+// white, where leaks were routine and wide. Against mid-grey a leak needs a
+// genuine grey bridge, so 2 is enough — and small enough that it cannot fill
+// in the real background showing through wheel spokes.
+const MASK_OPEN_RADIUS = 2
+// A pixel this far from the local backdrop is entirely car, not a blend of the
+// two. Below it the pixel is a mix and gets partial alpha with the backdrop's
+// contribution divided back out of its colour.
+const FRINGE_SPAN = 70
+// How far from a background pixel the de-halo pass reaches. The fill stops a
+// pixel or two short of the car because those pixels are part backdrop, so a
+// single-pixel de-halo leaves an opaque grey ring — invisible on the page
+// background, a bright outline on the obsidian band.
+const FRINGE_RADIUS = 2
 
 const TRIM_ALPHA = 8
 const TRIM_MARGIN_RATIO = 0.02
@@ -188,17 +224,19 @@ async function generateImage(ai, slot) {
 }
 
 /**
- * Keys the white seamless to alpha, de-halos the edge and trims to the
+ * Keys the mid-grey seamless to alpha, de-halos the edge and trims to the
  * subject with a guaranteed margin.
  *
- * Background is found by flood filling from the corners rather than by
- * thresholding the whole image, which is what keeps a white car opaque: its
- * body is light but it is not connected to the frame edge.
+ * Background is a pixel that is both close to the sampled backdrop colour and
+ * reachable from a corner without crossing a hard edge. Neither test is enough
+ * alone: distance alone would key the grey panels of a grey car, connectivity
+ * alone would walk into anything the backdrop touches.
  *
- * Returns diagnostics alongside the buffer so the log can show which
- * threshold each image needed and whether the subject ran off frame.
+ * Returns diagnostics alongside the buffer so the log can show what backdrop
+ * each image actually had, how flat it was, and whether the subject ran off
+ * frame.
  */
-async function keyWhiteToAlpha(input) {
+async function keyBackdropToAlpha(input) {
   const { data, info } = await sharp(input)
     .ensureAlpha()
     .raw()
@@ -206,62 +244,83 @@ async function keyWhiteToAlpha(input) {
 
   const { width, height } = info
   const total = width * height
-  const lightness = (pixel) => {
+  // Luma drives the edge guard only. Membership is per-channel distance, so a
+  // colour that happens to share the backdrop's brightness is still separable.
+  const luma = (pixel) => {
     const i = pixel * 4
-    return Math.min(data[i], data[i + 1], data[i + 2])
+    return (data[i] * 77 + data[i + 1] * 151 + data[i + 2] * 28) >> 8
   }
 
-  // What is the backdrop actually made of? Read it off the four corners
-  // rather than assuming. The median resists a stray dark speck; the minimum
-  // across the four corners keeps a vignetted corner from raising the bar.
-  const cornerLevel = () => {
-    const levels = []
-    for (const [ox, oy] of [
-      [0, 0],
-      [width - CORNER_SAMPLE, 0],
-      [0, height - CORNER_SAMPLE],
-      [width - CORNER_SAMPLE, height - CORNER_SAMPLE],
-    ]) {
-      const block = []
-      for (let y = oy; y < oy + CORNER_SAMPLE; y++) {
-        for (let x = ox; x < ox + CORNER_SAMPLE; x++) block.push(lightness(y * width + x))
+  // What is the backdrop actually made of? Read it off the four corners rather
+  // than trusting the prompt to have landed on exactly 128. Median within each
+  // corner resists a stray speck; median across the four resists one corner
+  // that caught a vignette.
+  const cornerBlocks = [
+    [0, 0],
+    [width - CORNER_SAMPLE, 0],
+    [0, height - CORNER_SAMPLE],
+    [width - CORNER_SAMPLE, height - CORNER_SAMPLE],
+  ].map(([ox, oy]) => {
+    const channels = [[], [], []]
+    for (let y = oy; y < oy + CORNER_SAMPLE; y++) {
+      for (let x = ox; x < ox + CORNER_SAMPLE; x++) {
+        const i = (y * width + x) * 4
+        for (let c = 0; c < 3; c++) channels[c].push(data[i + c])
       }
-      block.sort((a, b) => a - b)
-      levels.push(block[Math.floor(block.length / 2)])
     }
-    return Math.min(...levels)
+    return channels.map((values) => {
+      values.sort((a, b) => a - b)
+      return values[Math.floor(values.length / 2)]
+    })
+  })
+
+  const backdrop = [0, 1, 2].map((c) => {
+    const values = cornerBlocks.map((block) => block[c]).sort((a, b) => a - b)
+    return Math.round((values[1] + values[2]) / 2)
+  })
+
+  // How flat is it really? The largest per-channel deviation of any corner
+  // from the agreed backdrop. A flat seamless reads 0–3.
+  const cornerSpread = Math.max(
+    ...cornerBlocks.flatMap((block) => block.map((value, c) => Math.abs(value - backdrop[c]))),
+  )
+
+  // Per-channel distance from a backdrop estimate. Symmetric — a car darker
+  // than the backdrop is exactly as separable as one lighter than it, which is
+  // the whole point of not shooting on white.
+  const distanceFrom = (pixel, estimate) => {
+    const i = pixel * 4
+    return Math.max(
+      Math.abs(data[i] - estimate[0]),
+      Math.abs(data[i + 1] - estimate[1]),
+      Math.abs(data[i + 2] - estimate[2]),
+    )
   }
 
-  const backdrop = cornerLevel()
-
-  // Local gradient, used as a barrier below. Cheap 4-neighbour maximum
-  // difference; the backdrop reads near zero and any real edge reads high.
-  const gradient = new Uint8Array(total)
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const pixel = y * width + x
-      const here = lightness(pixel)
-      let peak = 0
-      if (x > 0) peak = Math.max(peak, Math.abs(here - lightness(pixel - 1)))
-      if (x < width - 1) peak = Math.max(peak, Math.abs(here - lightness(pixel + 1)))
-      if (y > 0) peak = Math.max(peak, Math.abs(here - lightness(pixel - width)))
-      if (y < height - 1) peak = Math.max(peak, Math.abs(here - lightness(pixel + width)))
-      gradient[pixel] = Math.min(255, peak)
-    }
+  // Per-channel difference between two pixels. This is what the fill actually
+  // tests: how far one step takes it, not how far it has come.
+  const stepBetween = (a, b) => {
+    const i = a * 4
+    const j = b * 4
+    return Math.max(
+      Math.abs(data[i] - data[j]),
+      Math.abs(data[i + 1] - data[j + 1]),
+      Math.abs(data[i + 2] - data[j + 2]),
+    )
   }
 
-  // Flood fill from all four corners at a given threshold. Seeding the corners
-  // rather than the whole border lets a car that runs off the edge of frame act
-  // as a wall; the corner seeds still reach right round the backdrop.
-  const fillAt = (threshold) => {
+  // Flood fill from all four corners against a backdrop estimate. Seeding the
+  // corners rather than the whole border lets a car that runs off the edge of
+  // frame act as a wall; the corner seeds still reach right round the backdrop.
+  const fillAt = (step, band, estimateAt) => {
     const mask = new Uint8Array(total)
     const stack = []
-    const visit = (x, y) => {
+    const visit = (x, y, from) => {
       if (x < 0 || y < 0 || x >= width || y >= height) return
       const pixel = y * width + x
       if (mask[pixel]) return
-      if (lightness(pixel) < threshold) return
-      if (gradient[pixel] > EDGE_GUARD) return
+      if (distanceFrom(pixel, estimateAt(x, y)) > band) return
+      if (from >= 0 && stepBetween(pixel, from) > step) return
       mask[pixel] = 1
       stack.push(pixel)
     }
@@ -271,7 +330,7 @@ async function keyWhiteToAlpha(input) {
       [0, height - 1],
       [width - 1, height - 1],
     ]) {
-      visit(x, y)
+      visit(x, y, -1)
     }
     let filled = 0
     while (stack.length) {
@@ -279,27 +338,109 @@ async function keyWhiteToAlpha(input) {
       filled++
       const x = pixel % width
       const y = (pixel - x) / width
-      visit(x - 1, y)
-      visit(x + 1, y)
-      visit(x, y - 1)
-      visit(x, y + 1)
+      visit(x - 1, y, pixel)
+      visit(x + 1, y, pixel)
+      visit(x, y - 1, pixel)
+      visit(x, y + 1, pixel)
     }
     return { mask, fraction: filled / total }
   }
 
-  // Relax the threshold until the fill has reached round the silhouette, and
-  // stop the step before it leaks through into the car.
+  const flat = () => backdrop
+
+  // First pass: flat corner value, tight band. Whatever this keys is backdrop
+  // beyond argument — it is corner-connected, smooth, and within 24 of the
+  // corners. It is the sample the surface is fitted to.
+  const seed = fillAt(STEPS[0], SEED_BAND, flat)
+
+  // Fit z = a + bx + cy + dx² + exy + fy² per channel over the seeded pixels,
+  // x and y normalised to [-1,1]. Quadratic because that is the shape of the
+  // two things the model actually produces — a vignette and a soft floor —
+  // and because anything higher order would start following the car.
+  const fitSurface = () => {
+    const terms = 6
+    const basis = (x, y) => {
+      const u = (2 * x) / width - 1
+      const v = (2 * y) / height - 1
+      return [1, u, v, u * u, u * v, v * v]
+    }
+    // Normal equations. One shared A, three right-hand sides.
+    const A = Array.from({ length: terms }, () => new Float64Array(terms))
+    const rhs = [0, 1, 2].map(() => new Float64Array(terms))
+    for (let y = 0; y < height; y += 2) {
+      for (let x = 0; x < width; x += 2) {
+        const pixel = y * width + x
+        if (!seed.mask[pixel]) continue
+        const b = basis(x, y)
+        const i = pixel * 4
+        for (let r = 0; r < terms; r++) {
+          for (let c = 0; c < terms; c++) A[r][c] += b[r] * b[c]
+          for (let ch = 0; ch < 3; ch++) rhs[ch][r] += b[r] * data[i + ch]
+        }
+      }
+    }
+    // Gaussian elimination with partial pivoting, three right-hand sides.
+    const M = A.map((row, r) => [...row, rhs[0][r], rhs[1][r], rhs[2][r]])
+    for (let col = 0; col < terms; col++) {
+      let pivot = col
+      for (let r = col + 1; r < terms; r++) {
+        if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r
+      }
+      if (Math.abs(M[pivot][col]) < 1e-9) return null
+      ;[M[col], M[pivot]] = [M[pivot], M[col]]
+      for (let r = 0; r < terms; r++) {
+        if (r === col) continue
+        const factor = M[r][col] / M[col][col]
+        for (let c = col; c < terms + 3; c++) M[r][c] -= factor * M[col][c]
+      }
+    }
+    const coefficients = [0, 1, 2].map((ch) =>
+      Array.from({ length: terms }, (_, r) => M[r][terms + ch] / M[r][r]),
+    )
+    return (x, y) => {
+      const b = basis(x, y)
+      return coefficients.map((k) => {
+        let sum = 0
+        for (let t = 0; t < terms; t++) sum += k[t] * b[t]
+        return sum
+      })
+    }
+  }
+
+  const surface = seed.fraction >= SEED_FLOOR ? fitSurface() : null
+  const estimateAt = surface ?? flat
+  const band = surface ? FIELD_BAND : SEED_BAND
+
+  // How far the fitted backdrop actually travels across the frame. Reported so
+  // a frame the model shaded badly is visible in the log rather than only in
+  // the contact sheet.
+  const drift = surface
+    ? (() => {
+        const samples = []
+        for (let y = 0; y < height; y += 32) {
+          for (let x = 0; x < width; x += 32) samples.push(surface(x, y)[1])
+        }
+        return Math.round(Math.max(...samples) - Math.min(...samples))
+      })()
+    : 0
+
+  // Relax the step until the fill has reached round the silhouette, and stop
+  // the step before it leaks through into the car.
+  //
+  // The leak check only arms once the fill is past the floor. Armed from the
+  // first attempt it fired on the jump from "nothing seeded" to "backdrop
+  // covered" — a legitimate first fill read as a leak, and every image with a
+  // corner outside the tightest step failed outright with 0% keyed.
   let chosen = null
   let previous = 0
-  let usedTolerance = null
-  for (const tolerance of TOLERANCES) {
-    const threshold = Math.max(1, backdrop - tolerance)
-    const attempt = fillAt(threshold)
+  let usedStep = null
+  for (const step of STEPS) {
+    const attempt = fillAt(step, band, estimateAt)
     if (attempt.fraction > FILL_CEILING) break
-    if (chosen && attempt.fraction - previous > FILL_LEAK_JUMP) break
+    if (chosen && previous >= FILL_FLOOR && attempt.fraction - previous > FILL_LEAK_JUMP) break
     chosen = attempt
     previous = attempt.fraction
-    usedTolerance = tolerance
+    usedStep = step
     // Once the backdrop is comfortably covered there is nothing to gain by
     // relaxing further, and every extra step risks the leak.
     if (attempt.fraction > 0.35) break
@@ -307,8 +448,9 @@ async function keyWhiteToAlpha(input) {
 
   if (!chosen || chosen.fraction < FILL_FLOOR) {
     throw new Error(
-      `keying could not separate the backdrop (corner level ${backdrop}, best fill ` +
-        `${chosen ? (chosen.fraction * 100).toFixed(1) : '0'}%) — the frame was not white seamless`,
+      `keying could not separate the backdrop (corners ${backdrop.join(',')}, spread ` +
+        `${cornerSpread}, drift ${drift}, best fill ` +
+        `${chosen ? (chosen.fraction * 100).toFixed(1) : '0'}%) — not mid-grey seamless`,
     )
   }
 
@@ -373,17 +515,54 @@ async function keyWhiteToAlpha(input) {
   const outside = new Uint8Array(total)
   for (let p = 0; p < total; p++) outside[p] = chosen.mask[p] && reopened[p] ? 1 : 0
 
-  const nearOutside = (x, y) =>
-    (x > 0 && outside[y * width + x - 1]) ||
-    (x < width - 1 && outside[y * width + x + 1]) ||
-    (y > 0 && outside[(y - 1) * width + x]) ||
-    (y < height - 1 && outside[(y + 1) * width + x])
+  // The local backdrop under a fringe pixel: the mean of the real background
+  // within a small window. The global corner value is the wrong reference for
+  // unmixing when the field drifts 40 levels down the frame — it would
+  // over-correct the top of the car and under-correct the bottom.
+  const localBackdrop = (x, y) => {
+    let count = 0
+    const sum = [0, 0, 0]
+    for (let dy = -FRINGE_RADIUS - 1; dy <= FRINGE_RADIUS + 1; dy++) {
+      for (let dx = -FRINGE_RADIUS - 1; dx <= FRINGE_RADIUS + 1; dx++) {
+        const nx = x + dx
+        const ny = y + dy
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
+        const pixel = ny * width + nx
+        if (!outside[pixel]) continue
+        const i = pixel * 4
+        for (let c = 0; c < 3; c++) sum[c] += data[i + c]
+        count++
+      }
+    }
+    return count ? sum.map((value) => value / count) : backdrop
+  }
+
+  const nearOutside = (x, y) => {
+    for (let dy = -FRINGE_RADIUS; dy <= FRINGE_RADIUS; dy++) {
+      for (let dx = -FRINGE_RADIUS; dx <= FRINGE_RADIUS; dx++) {
+        const nx = x + dx
+        const ny = y + dy
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
+        if (outside[ny * width + nx]) return true
+      }
+    }
+    return false
+  }
 
   // De-halo. A fringe pixel is part backdrop and part car, so give it partial
-  // alpha AND take the backdrop's contribution back out of its colour.
-  // Without the unpremultiply the edge keeps a white rim on every card.
-  const fringeFloor = Math.max(1, backdrop - 90)
-
+  // alpha AND take the backdrop's contribution back out of its colour. Without
+  // the unpremultiply every card keeps a grey rim — invisible against the page
+  // background, obvious against the obsidian band, which is why the check
+  // composites over both.
+  //
+  // Distance from the backdrop is the mixing ratio, and it is symmetric: a
+  // white wing and a black tyre both read as "far", so both de-halo. On white
+  // seamless this could only ever measure one direction.
+  //
+  // The pass runs over a snapshot: colours are read from `source` and written
+  // to `data`, so one unmixed fringe pixel cannot become the reference for the
+  // next one along.
+  const source = Uint8Array.prototype.slice.call(data)
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const pixel = y * width + x
@@ -394,17 +573,22 @@ async function keyWhiteToAlpha(input) {
         continue
       }
 
-      if (nearOutside(x, y)) {
-        const light = lightness(pixel)
-        if (light > fringeFloor) {
-          const alpha = Math.max(0, Math.min(1, (backdrop - light) / (backdrop - fringeFloor)))
-          data[i + 3] = Math.round(255 * alpha)
-          if (alpha > 0.02) {
-            for (let c = 0; c < 3; c++) {
-              const unmixed = (data[i + c] - backdrop * (1 - alpha)) / alpha
-              data[i + c] = Math.max(0, Math.min(255, Math.round(unmixed)))
-            }
-          }
+      if (!nearOutside(x, y)) continue
+
+      const local = localBackdrop(x, y)
+      const spread = Math.max(
+        Math.abs(source[i] - local[0]),
+        Math.abs(source[i + 1] - local[1]),
+        Math.abs(source[i + 2] - local[2]),
+      )
+      const alpha = Math.min(1, spread / FRINGE_SPAN)
+      if (alpha >= 1) continue
+
+      data[i + 3] = Math.round(255 * alpha)
+      if (alpha > 0.02) {
+        for (let c = 0; c < 3; c++) {
+          const unmixed = (source[i + c] - local[c] * (1 - alpha)) / alpha
+          data[i + c] = Math.max(0, Math.min(255, Math.round(unmixed)))
         }
       }
     }
@@ -458,7 +642,7 @@ async function keyWhiteToAlpha(input) {
   }
 
   if (maxX < 0) {
-    throw new Error('keying left nothing opaque — the frame was not white seamless')
+    throw new Error('keying left nothing opaque — the frame was not flat mid-grey seamless')
   }
 
   // Trim to the subject, then guarantee the margin. Clamping alone silently
@@ -498,7 +682,7 @@ async function keyWhiteToAlpha(input) {
           .toBuffer()
       : trimmed
 
-  return { buffer, backdrop, tolerance: usedTolerance, removed: chosen.fraction, clipped }
+  return { buffer, backdrop, cornerSpread, drift, step: usedStep, removed: chosen.fraction, clipped }
 }
 
 /**
@@ -613,7 +797,17 @@ async function processSlot(ai, slot, options) {
       let keyed = null
       let master = rawBuffer
       if (slot.transparent) {
-        keyed = await keyWhiteToAlpha(rawBuffer)
+        keyed = await keyBackdropToAlpha(rawBuffer)
+        // An opaque pixel on the frame border means one of two things, and
+        // both are the frame's fault rather than the key's: the model composed
+        // the car off the edge, or it painted a two-tone backdrop with a hard
+        // horizon and the band above it stayed opaque. The prompt rules out
+        // both, so re-roll the frame instead of shipping it. Only when this
+        // run paid for the raw — a re-encode must never reach the network.
+        if (keyed.clipped && !reusedRaw && attempt < MAX_ATTEMPTS) {
+          rawBuffer = null
+          throw new Error('backdrop or subject reaches the frame edge — re-rolling')
+        }
         master = keyed.buffer
       }
       const encoded = await encodeWebp(master, slot)
@@ -623,7 +817,12 @@ async function processSlot(ai, slot, options) {
 
       const note = [
         `q${encoded.quality}`,
-        keyed ? `key bg${keyed.backdrop}-${keyed.tolerance} cut ${(keyed.removed * 100).toFixed(0)}%` : '',
+        keyed
+          ? `key bg${keyed.backdrop[0]} drift${keyed.drift} step${keyed.step} cut ${(keyed.removed * 100).toFixed(0)}%`
+          : '',
+        keyed && keyed.cornerSpread > CORNER_SPREAD_WARN
+          ? `BACKDROP NOT FLAT (corner spread ${keyed.cornerSpread})`
+          : '',
         keyed?.clipped ? 'SUBJECT RUNS OFF FRAME' : '',
         reusedRaw ? 'from raw' : '',
         attempt > 1 ? `attempt ${attempt}` : '',

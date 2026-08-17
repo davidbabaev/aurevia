@@ -2,8 +2,13 @@
 // Every slot the site needs. Consumed by scripts/generate-images.mjs
 //
 // RATIOS: Gemini accepts only 1:1, 3:4, 4:3, 9:16, 16:9. No 3:2.
-// TRANSPARENCY: cars are generated on pure white seamless, then keyed
+// TRANSPARENCY: cars are generated on FLAT MID-GREY seamless, then keyed
 //   to alpha by the script. Models do not emit reliable alpha directly.
+//   Mid-grey, not white: a flood fill separates background from subject by
+//   colour distance, and a white or silver car on a white backdrop has no
+//   distance to measure — the fill walks straight through the roof, doors
+//   and bonnet. Against RGB(128,128,128) every body colour in the set,
+//   white included, sits far enough away to key cleanly.
 
 // ---------------------------------------------------------------------
 // The style clause. Appended VERBATIM to every prompt.
@@ -153,7 +158,20 @@ export const SLOTS = [
     file: `vehicles/${v.slug}/card.png`,
     ratio: '4:3',
     transparent: true,
-    prompt: `A studio product photograph of ${v.desc}, front three-quarter view, on a pure flat white seamless background with no floor line, no horizon, no shadow, no reflection and no gradient. The background must be uniform pure white #FFFFFF everywhere around the car. Even shadowless studio lighting. The car is fully in frame with a small margin on all sides.`,
+    // The background clause leads, and the value asked for is deliberately
+    // darker than the value wanted.
+    //
+    // The target is mid-grey, RGB(128,128,128) — far enough from white paint,
+    // from silver paint and from black paint to key against all three. Asked
+    // for as "mid-grey RGB(128,128,128)", stated three ways, the model
+    // returned 155–188 both times: a light grey. At 182 the shaded flank of a
+    // white M4 is the same value as the backdrop and the key has nothing to
+    // separate, which is exactly the failure the white seamless had. The model
+    // has a strong prior for a bright studio sweep and a number does not move
+    // it, so the number is set low and the prior brings it back up. Charcoal
+    // is named as a material as well, which moves it further than the triplet
+    // does on its own.
+    prompt: `A studio product photograph of ${v.desc}, front three-quarter view, standing against a completely flat, featureless field of DARK CHARCOAL GREY. The background is the critical part of this brief. Every pixel that is not the car is the same dark charcoal grey, RGB(70,70,70) — the tone of a charcoal grey painted studio wall, definitely dark, closer to black than to white, never a light grey and never a bright studio sweep. It is that identical grey corner to corner and edge to edge, behind the car and under it: no gradient, no vignette, no falloff, no brighter pool behind the car, no floor, no horizon, no wall-to-floor curve, no shadow beneath or behind the car and no reflection under it. The car floats against an even charcoal field. Even shadowless studio lighting on the car itself. The car is fully in frame with a small margin on all sides.`,
   })),
 
   // 48 gallery shots
