@@ -12,7 +12,7 @@
 
 // ---------------------------------------------------------------------
 // The style clause. Appended VERBATIM to every prompt.
-// One visual register across all 154 images is what makes them read as
+// One visual register across all 166 images is what makes them read as
 // one photographer. Never edit this per-image.
 // ---------------------------------------------------------------------
 export const STYLE = `
@@ -205,6 +205,34 @@ const LIFESTYLE_SHOTS = [
     prompt: (v) => `A wide photograph of ${v.desc}, parked outside a large modern concrete and glass building, seen from a three-quarter FRONT angle. The camera is at standing height. The building fills the frame behind the car — flat concrete planes, tall glazing, no ornament. Soft overcast light, even and shadowless. The forecourt is clean bare concrete. The car is alone in frame.`,
   },
 ];
+
+// ---------------------------------------------------------------------
+// Detail-page heroes. One per car, 16:9, opaque — no keying and no
+// remove.bg credit.
+//
+// This slot exists because neither of the two images already generated per
+// car can carry that band. The cut-out has no ground and no space, so the
+// page had to invent one around it; `architecture` is an exterior scene that
+// puts the building in front and the car small and set back, and its bright
+// concrete forced a white fade over the copy that washed the front of the
+// car out. The wireframe wants neither: one wide frame, the car large on the
+// right, and the left half a quiet bright interior that dark text can sit on
+// directly.
+//
+// The composition clause is the load-bearing part and it is written the way
+// hero-home's had to be rewritten — by saying what the empty half DOES
+// contain rather than listing what it must not. "Nothing on the left" is
+// read as a licence to fill it with the same architecture at lower contrast;
+// "bright, quiet, empty floor and soft out-of-focus architecture" is not.
+//
+// Exposure is stated twice, positively and then against the prior. STYLE
+// asks for deep blacks and a muted grade, and every other frame in the
+// library is a dark showroom or an overcast exterior, so the model's default
+// for "car indoors" is a dark showroom — which is exactly the image that
+// cannot carry ink text on its left half.
+// ---------------------------------------------------------------------
+const detailHeroPrompt = (description) =>
+  `A wide photograph of ${description}, front three-quarter, front pointing LEFT, positioned in the RIGHT HALF of the frame, standing on a pale polished floor inside a bright modern architectural space with tall glazing and slender columns far behind it. CRITICAL COMPOSITION: the LEFT HALF of the frame is bright, quiet, empty floor and soft out-of-focus architecture — nothing that competes with dark text placed over it. The whole car is inside the frame with clear space above and to its right; it must not be cropped by any edge. Bright, soft, even daylight. Light overall exposure, not a dark showroom.`;
 
 // ---------------------------------------------------------------------
 // Standalone site slots.
@@ -400,6 +428,15 @@ export const SLOTS = [
     }))
   ),
 
+  // 12 detail-page heroes (16:9, opaque)
+  ...VEHICLES.map((v) => ({
+    id: `${v.slug}-hero`,
+    file: `vehicles/${v.slug}/hero.png`,
+    ratio: '16:9',
+    transparent: false,
+    prompt: detailHeroPrompt(v.desc),
+  })),
+
   // 24 lifestyle shots (2 per car)
   ...VEHICLES.flatMap((v) =>
     LIFESTYLE_SHOTS.map((s) => ({
@@ -413,5 +450,5 @@ export const SLOTS = [
 ];
 
 
-// 3 + 3 + 4 + 4 + 12 + 44 + 60 + 24 = 154
+// 3 + 3 + 4 + 4 + 12 + 44 + 60 + 24 + 12 = 166
 export const TOTAL = SLOTS.length;

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Button } from '../components/Button'
-import { CarShadow } from '../components/CarShadow'
 import { Container } from '../components/Container'
 import { Gallery } from '../components/Gallery'
 import { Icon } from '../components/Icon'
@@ -32,12 +31,12 @@ const TAB_IDS = ['overview', 'features', 'specifications', 'gallery'] as const
  * The gallery strip. Six shots fill the component's six-column thumbnail
  * row exactly as the wireframe shows it.
  *
- * `architecture` is the seventh the manifest generates and it is in none of
- * them. It carried the hero while the hero was a photograph; the hero is a
- * studio stage now, so the slot is still generated and shipped but this page
- * no longer reads it. Left in the manifest rather than removed — dropping it
- * would strand a raw that has already been paid for, and a seventh thumbnail
- * would break the six-column row.
+ * `architecture` is in none of them, and neither is `hero`. Both are wide
+ * exteriors of the same car and both were tried in the band above: the hero
+ * slot is the one purpose-built for it, and architecture is what it replaced.
+ * They stay in the manifest — deleting a slot would strand a raw that has
+ * already been paid for — but a seventh thumbnail would break the six-column
+ * row the wireframe shows, so neither is added here.
  */
 const GALLERY_SHOTS = [
   { key: 'exterior', label: VEHICLE_DETAIL.gallery.exterior },
@@ -285,41 +284,50 @@ export function VehicleDetail() {
 
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────────────
-          A studio stage, not a photograph. The band this replaces put
-          architecture.webp full-bleed under a white fade, and the fade was
-          the tell: it washed the front half of the car out to make room for
-          the copy, the frame cropped the car at the right edge, and an
-          environmental shot sets the car back behind the building anyway —
-          three symptoms of one mistake, which is asking a scene to be a
-          portrait. The wireframe does not use a scene. It stands the car on
-          a soft light ground and lets it be the subject.
+      {/* ── Hero ────────────────────────────────────────
+          One wide photograph, shot for this band and nothing else.
 
-          So the ground is a gradient in the tokens rather than a picture,
-          and the car is card.webp — the same keyed cut-out every grid on the
-          site uses, whole and with air around it. Nothing overlaps it: the
-          copy has its own column on bg, which is why no scrim is needed here
-          and none is used. That retires one of the two gradients section 4
-          was carrying; the ellipse under the car and this ground are what
-          remain, and this one is flat token-to-token rather than a scrim
-          over artwork.
+          Two attempts preceded it and each failed for its own reason.
+          architecture.webp is an exterior scene: it puts the building in
+          front, sets the car back and small, and its bright concrete forced
+          a white fade over the copy that washed the front of the car out.
+          The cut-out on a token gradient fixed the washing but had no ground
+          and no space, so the page had to invent a stage around it. The
+          wireframe asks for neither — one frame, car large on the right, the
+          left half a bright quiet interior that dark text sits on directly.
+          That is a photograph you commission rather than one you crop, so
+          the manifest now carries a hero slot per car.
 
-          Two real layouts. From 1024px the ground bleeds to the right edge
-          behind a two-column grid; below that the car takes its own panel in
-          the flow, above the copy, the way the cards do. */}
-      <section className="relative overflow-hidden bg-bg">
-        {/* The ground. It bleeds to the viewport edge as the wireframe has
-            it, so the stage belongs to the page instead of sitting on it as
-            a card. surface against bg across the seam is 1.05:1 — far too
-            close to read as an edge, which is the whole reason the left
-            column needs no fade to protect it. */}
-        <div
-          aria-hidden
-          className="absolute inset-y-0 right-0 hidden w-[56%] bg-linear-to-b from-surface to-bg lg:block"
+          No scrim, and that is the point of the slot: the prompt makes the
+          left half bright, so the image protects the type instead of a
+          gradient having to. Measured on the rendered page rather than
+          assumed — see the note on the copy column. Section 4 is back to one
+          gradient exception, the ellipse under the cut-outs.
+
+          Every piece of type is ink. Muted has no legal ground on a
+          near-white photograph and accent is 2.41:1 on white, so the
+          wireframe's blue year is not reproducible here.
+
+          Two real layouts. From 1024px the photograph fills the band and the
+          copy lies over its left half. Below that the same file is a 16:9
+          block in the flow with the copy beneath it: at 390 there is no left
+          half to sit on, and type over a 219px-tall photograph would have
+          nowhere to go. One img serves both — absolute from lg, in the flow
+          under it — so it stays one fetch and one node in the accessibility
+          tree. */}
+      <section className="relative overflow-hidden bg-bg pt-nav-clear lg:pt-0">
+        <img
+          src={`/images/vehicles/${vehicle.slug}/hero.webp`}
+          alt={`${vehicle.name} in the Aurevia showroom`}
+          width={1344}
+          height={768}
+          fetchPriority="high"
+          decoding="async"
+          className="aspect-video w-full object-cover lg:absolute lg:inset-0 lg:aspect-auto lg:size-full"
         />
 
         <Container>
-          <div className="relative pt-nav-clear pb-section-tight lg:min-h-[600px] lg:pb-[128px]">
+          <div className="relative pt-8 pb-section-tight lg:min-h-[600px] lg:pt-nav-clear lg:pb-[128px]">
             <ol className="flex flex-wrap items-center gap-2 font-body text-body-sm text-ink">
               <li>
                 <Link to="/" className="hover:underline">
@@ -338,37 +346,12 @@ export function VehicleDetail() {
               </li>
             </ol>
 
-            <div className="mt-6 lg:mt-10 lg:grid lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:items-center lg:gap-10">
-              {/* The stage. First in source so the small layout keeps the
-                  breadcrumb → car → copy order the page already had, and
-                  sent to the second column from 1024px.
-
-                  Below 1024 it carries the ground itself as a rounded panel,
-                  because the bleeding one behind it is desktop-only; from
-                  1024 the panel drops its own fill and stands on that.
-
-                  object-contain object-bottom, not centred: the twelve
-                  cut-outs run 1.80 to 2.26 in aspect, and centring one in a
-                  fixed box floats the wheels a different distance off the
-                  bottom for every car, which is exactly the thing a contact
-                  shadow cannot tolerate. Bottom-aligning pins all twelve to
-                  the same place. See CarShadow. */}
-              <div className="rounded-card bg-linear-to-b from-surface to-bg px-5 py-7 lg:order-last lg:rounded-none lg:bg-none lg:px-0 lg:py-0">
-                <div className="relative mx-auto aspect-[2/1] w-full max-w-[680px]">
-                  <CarShadow size="hero" />
-                  <img
-                    src={`/images/vehicles/${vehicle.slug}/card.webp`}
-                    alt={vehicle.name}
-                    width={812}
-                    height={406}
-                    fetchPriority="high"
-                    decoding="async"
-                    className="relative size-full object-contain object-bottom"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-8 lg:mt-0">
+            {/* The copy column, capped well short of half the frame. The
+                photographs put the nearest car nose at about 36% of the
+                width, so a column running to the middle would drop the
+                longest line of type onto black paint. At 420px it ends
+                around 39% at 1280 and the type clears the paint. */}
+            <div className="mt-8 lg:mt-10 lg:max-w-[420px]">
               <p className="font-body text-label text-ink uppercase">{vehicle.year}</p>
 
               <h1 className="mt-3 font-display text-display-sm text-ink lg:text-display">
@@ -400,7 +383,6 @@ export function VehicleDetail() {
                 <p className="font-body text-body-sm text-ink">
                   {VEHICLE_DETAIL.stockLabel} {vehicle.stockNumber}
                 </p>
-              </div>
               </div>
             </div>
           </div>
