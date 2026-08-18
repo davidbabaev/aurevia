@@ -6,7 +6,7 @@ interface CarShadowProps {
    * a 12px blur under the tile smears the whole ellipse away, and a 4px blur
    * under the card reads as a hard grey bar.
    */
-  size?: 'card' | 'tile'
+  size?: 'card' | 'tile' | 'hero'
 }
 
 /**
@@ -35,6 +35,16 @@ const SIZES = {
   // height and leaves margin left and right — so the ellipse is inset much
   // further than the card's.
   tile: 'inset-x-[26%] bottom-[3%] h-1.5 blur-xs',
+  // The detail hero, where the cut-out is the subject rather than a
+  // thumbnail. Its box pairs with object-contain object-bottom, and that
+  // pairing is what makes one set of numbers cover all twelve cars: the
+  // cut-outs run from 1.80 to 2.26 in aspect, so a contained image centred
+  // in the box would sit anywhere between 5.8% and 11.4% up from the bottom
+  // edge depending on which car it is. Bottom-aligning pins every one of
+  // them to the same 5.7–5.8%, which is where this ellipse is centred.
+  // Inset is the middle of the range the same spread produces horizontally
+  // — the narrowest car fills 90% of the box and the widest 100%.
+  hero: 'inset-x-[16%] bottom-[2%] h-[8%] blur-lg',
 } as const
 
 // Alpha is per size, not shared. ink/20 was set once for both and measured
@@ -46,6 +56,10 @@ const SIZES = {
 const ALPHAS = {
   card: 'bg-ink/30',
   tile: 'bg-ink/35',
+  // Lower than the card's. The hero ellipse is several times the area, and
+  // the same alpha over that much more of the band reads as a grey wash
+  // rather than a contact shadow.
+  hero: 'bg-ink/25',
 } as const
 
 export function CarShadow({ size = 'card' }: CarShadowProps) {

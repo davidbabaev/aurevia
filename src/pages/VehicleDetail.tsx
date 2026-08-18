@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Button } from '../components/Button'
+import { CarShadow } from '../components/CarShadow'
 import { Container } from '../components/Container'
 import { Gallery } from '../components/Gallery'
 import { Icon } from '../components/Icon'
@@ -28,10 +29,15 @@ const money = new Intl.NumberFormat('en-US', {
 const TAB_IDS = ['overview', 'features', 'specifications', 'gallery'] as const
 
 /**
- * The gallery strip. `architecture` is the seventh shot the manifest
- * generates and it is now the hero photograph, so it is not repeated here;
- * six shots fill the component's six-column thumbnail row exactly as the
- * wireframe shows it.
+ * The gallery strip. Six shots fill the component's six-column thumbnail
+ * row exactly as the wireframe shows it.
+ *
+ * `architecture` is the seventh the manifest generates and it is in none of
+ * them. It carried the hero while the hero was a photograph; the hero is a
+ * studio stage now, so the slot is still generated and shipped but this page
+ * no longer reads it. Left in the manifest rather than removed — dropping it
+ * would strand a raw that has already been paid for, and a seventh thumbnail
+ * would break the six-column row.
  */
 const GALLERY_SHOTS = [
   { key: 'exterior', label: VEHICLE_DETAIL.gallery.exterior },
@@ -280,43 +286,40 @@ export function VehicleDetail() {
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────────
-          The wireframe's hero is the car photographed outside the showroom
-          with the copy over it, so architecture.webp carries the band.
+          A studio stage, not a photograph. The band this replaces put
+          architecture.webp full-bleed under a white fade, and the fade was
+          the tell: it washed the front half of the car out to make room for
+          the copy, the frame cropped the car at the right edge, and an
+          environmental shot sets the car back behind the building anyway —
+          three symptoms of one mistake, which is asking a scene to be a
+          portrait. The wireframe does not use a scene. It stands the car on
+          a soft light ground and lets it be the subject.
 
-          That photograph is bright concrete and glass, which is exactly why
-          the copy does not sit on it directly: a bg scrim gives the type a
-          ground that holds whatever the picture is doing underneath. Worst
-          case — a black photograph under the fade at its thinnest point —
-          ink still measures 6.8:1 on it. This is the one place on the site
-          allowed a gradient, and only because type has to survive a
-          photograph.
+          So the ground is a gradient in the tokens rather than a picture,
+          and the car is card.webp — the same keyed cut-out every grid on the
+          site uses, whole and with air around it. Nothing overlaps it: the
+          copy has its own column on bg, which is why no scrim is needed here
+          and none is used. That retires one of the two gradients section 4
+          was carrying; the ellipse under the car and this ground are what
+          remain, and this one is flat token-to-token rather than a scrim
+          over artwork.
 
-          Every piece of type here is ink for the same reason the light band
-          it replaces was: muted has no legal ground on a near-white scrim.
-
-          Two real layouts. From 1024px the photograph fills the band and the
-          copy lies over its left half; below that it is a real 16:9 block in
-          the flow, because a full-bleed photograph at 390px would put the
-          floating white nav pill on bright concrete. */}
+          Two real layouts. From 1024px the ground bleeds to the right edge
+          behind a two-column grid; below that the car takes its own panel in
+          the flow, above the copy, the way the cards do. */}
       <section className="relative overflow-hidden bg-bg">
-        <img
-          src={`/images/vehicles/${vehicle.slug}/architecture.webp`}
-          alt={`${vehicle.name} — ${VEHICLE_DETAIL.gallery.architecture}`}
-          width={1344}
-          height={768}
-          fetchPriority="high"
-          decoding="async"
-          // Biased below centre: on a wide viewport a centred crop of a 16:9
-          // frame takes the wheels off the bottom of the car.
-          className="absolute inset-0 hidden size-full object-cover object-[50%_65%] lg:block"
-        />
+        {/* The ground. It bleeds to the viewport edge as the wireframe has
+            it, so the stage belongs to the page instead of sitting on it as
+            a card. surface against bg across the seam is 1.05:1 — far too
+            close to read as an edge, which is the whole reason the left
+            column needs no fade to protect it. */}
         <div
           aria-hidden
-          className="absolute inset-0 hidden bg-linear-to-r from-bg from-45% to-bg/0 to-85% lg:block"
+          className="absolute inset-y-0 right-0 hidden w-[56%] bg-linear-to-b from-surface to-bg lg:block"
         />
 
         <Container>
-          <div className="relative pt-nav-clear pb-section-tight lg:min-h-[660px] lg:pb-[128px]">
+          <div className="relative pt-nav-clear pb-section-tight lg:min-h-[600px] lg:pb-[128px]">
             <ol className="flex flex-wrap items-center gap-2 font-body text-body-sm text-ink">
               <li>
                 <Link to="/" className="hover:underline">
@@ -335,19 +338,37 @@ export function VehicleDetail() {
               </li>
             </ol>
 
-            {/* The 390px half of the hero. Hidden rather than duplicated in
-                the accessibility tree — display:none takes it out of both. */}
-            <img
-              src={`/images/vehicles/${vehicle.slug}/architecture.webp`}
-              alt={`${vehicle.name} — ${VEHICLE_DETAIL.gallery.architecture}`}
-              width={1344}
-              height={768}
-              fetchPriority="high"
-              decoding="async"
-              className="mt-6 aspect-[16/9] w-full rounded-card object-cover object-[50%_65%] lg:hidden"
-            />
+            <div className="mt-6 lg:mt-10 lg:grid lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:items-center lg:gap-10">
+              {/* The stage. First in source so the small layout keeps the
+                  breadcrumb → car → copy order the page already had, and
+                  sent to the second column from 1024px.
 
-            <div className="mt-8 lg:mt-12 lg:max-w-[520px]">
+                  Below 1024 it carries the ground itself as a rounded panel,
+                  because the bleeding one behind it is desktop-only; from
+                  1024 the panel drops its own fill and stands on that.
+
+                  object-contain object-bottom, not centred: the twelve
+                  cut-outs run 1.80 to 2.26 in aspect, and centring one in a
+                  fixed box floats the wheels a different distance off the
+                  bottom for every car, which is exactly the thing a contact
+                  shadow cannot tolerate. Bottom-aligning pins all twelve to
+                  the same place. See CarShadow. */}
+              <div className="rounded-card bg-linear-to-b from-surface to-bg px-5 py-7 lg:order-last lg:rounded-none lg:bg-none lg:px-0 lg:py-0">
+                <div className="relative mx-auto aspect-[2/1] w-full max-w-[680px]">
+                  <CarShadow size="hero" />
+                  <img
+                    src={`/images/vehicles/${vehicle.slug}/card.webp`}
+                    alt={vehicle.name}
+                    width={812}
+                    height={406}
+                    fetchPriority="high"
+                    decoding="async"
+                    className="relative size-full object-contain object-bottom"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 lg:mt-0">
               <p className="font-body text-label text-ink uppercase">{vehicle.year}</p>
 
               <h1 className="mt-3 font-display text-display-sm text-ink lg:text-display">
@@ -379,6 +400,7 @@ export function VehicleDetail() {
                 <p className="font-body text-body-sm text-ink">
                   {VEHICLE_DETAIL.stockLabel} {vehicle.stockNumber}
                 </p>
+              </div>
               </div>
             </div>
           </div>
