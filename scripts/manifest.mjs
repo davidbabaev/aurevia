@@ -12,7 +12,7 @@
 
 // ---------------------------------------------------------------------
 // The style clause. Appended VERBATIM to every prompt.
-// One visual register across all 166 images is what makes them read as
+// One visual register across all 167 images is what makes them read as
 // one photographer. Never edit this per-image.
 // ---------------------------------------------------------------------
 export const STYLE = `
@@ -250,7 +250,27 @@ const SITE_SLOTS = [
     // bright surfaces are now named, and the left half is described by what it
     // does contain — floor, nothing else — rather than by a list of what it
     // must not.
-    prompt: `A wide cinematic photograph of a single white four-door luxury coupe seen from a FRONT THREE-QUARTER angle, the front of the car facing left of camera, standing alone on a vast polished near-black showroom floor. The car sits in the RIGHT HALF of the frame. CRITICAL COMPOSITION: the left half of the frame is entirely empty polished dark floor receding into blackness. No columns, no walls, no glazing, no structure and no bright surfaces anywhere in the left half. Only the floor. Headline text goes there. Soft daylight from the left.`,
+    //
+    // The car is named. "A white four-door luxury coupe" returned a car with
+    // no badge and proportions belonging to no real model — it read as a fake.
+    // The wireframe's hero is a Mercedes-AMG GT four-door, so it is asked for
+    // by name and then by the four things that make its silhouette: the long
+    // bonnet, the fastback roof, the wide grille and the low wide stance.
+    // Only the vehicle description changed; the composition clause below is
+    // untouched and is the reason the headline has anywhere to sit.
+    prompt: `A wide cinematic photograph of a single white Mercedes-AMG GT four-door coupe — a long low four-door fastback with a very long bonnet, a wide upright AMG grille with vertical slats, deep front air intakes, wide rear haunches and large dark alloy wheels — seen from a FRONT THREE-QUARTER angle, the front of the car facing left of camera, standing alone on a vast polished near-black showroom floor. The car sits in the RIGHT HALF of the frame. CRITICAL COMPOSITION: the left half of the frame is entirely empty polished dark floor receding into blackness. No columns, no walls, no glazing, no structure and no bright surfaces anywhere in the left half. Only the floor. Headline text goes there. Soft daylight from the left.`,
+  },
+  // The /vehicles page hero. Deliberately not a second crop of hero-home:
+  // the two sit one click apart, so this one is outdoors, bright and overcast
+  // where the home hero is a dark showroom. Same composition discipline
+  // though — car in the right half, whole and uncropped, left half kept quiet
+  // so the heading has somewhere to sit.
+  {
+    id: 'hero-vehicles',
+    file: 'hero/vehicles-hero.png',
+    ratio: '16:9',
+    transparent: false,
+    prompt: `A wide photograph of a dark premium saloon, front three-quarter, front pointing LEFT, positioned in the RIGHT HALF of the frame, on a pale plaza outside a large modern glass and concrete building. CRITICAL COMPOSITION: the LEFT HALF of the frame is quiet open ground and soft out-of-focus architecture, with nothing that competes with text placed over it. The whole car is inside the frame, not cropped by any edge. Bright, soft, overcast daylight.`,
   },
   {
     id: 'cta-showroom',
@@ -450,5 +470,5 @@ export const SLOTS = [
 ];
 
 
-// 3 + 3 + 4 + 4 + 12 + 44 + 60 + 24 + 12 = 166
+// 4 + 3 + 4 + 4 + 12 + 44 + 60 + 24 + 12 = 167
 export const TOTAL = SLOTS.length;

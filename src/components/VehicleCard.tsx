@@ -88,17 +88,25 @@ export function VehicleCard({ vehicle, highlight = false }: VehicleCardProps) {
           {vehicle.year} · {vehicle.specs.fuel} · {vehicle.specs.transmission}
         </p>
 
-        {/* No wrap. With it, whether the price and the button shared a line
-            came down to a few pixels of label width, so one card in a row
-            would stack while its neighbours did not. The button already
-            refuses to wrap; the price is what gives. */}
-        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
-          <p className="min-w-0 font-display text-h3-sm text-ink">
+        {/* Price on its own line, action full width beneath it — the order
+            home-desktop-full.png sets for the featured card.
+
+            The two wireframes disagree here: vehicles-desktop.png puts the
+            price and a small button side by side on one row. That version was
+            what shipped first, and it had a standing problem — whether the
+            two fitted on one line came down to a few pixels of price label
+            width, so "Contact for Price" would stack a card while its
+            neighbours stayed inline and the row lost its rhythm. Stacking
+            them deliberately settles that: the price cannot collide with the
+            button, and the button gets a target the full width of the card,
+            which is also the larger tap target at 390px. */}
+        <div className="mt-auto flex flex-col gap-3 pt-2">
+          <p className="font-display text-h3-sm text-ink">
             {vehicle.price === null
               ? VEHICLE_DETAIL.contactForPrice
               : money.format(vehicle.price)}
           </p>
-          <Button to={href} size="sm" variant="secondary" shape="control">
+          <Button to={href} size="sm" variant="secondary" shape="control" fullWidth>
             {CARD.viewVehicle}
           </Button>
         </div>

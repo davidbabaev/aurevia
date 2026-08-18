@@ -163,60 +163,101 @@ export function Vehicles() {
 
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <Section tone="ink" spacing="none" contained={false}>
-        <div className="relative overflow-hidden">
-          {/*
-            The photograph is nearly black down its left side, which is where
-            the copy sits from 1024px up — so it can run close to full strength
-            there. Below that the crop swings across the white car, so it is
-            held at 30%: white on the resulting ground is 7.8:1 and the border
-            token is 5.9:1, where an untouched image would fail both.
-          */}
-          <img
-            src="/images/hero/home-hero.webp"
-            alt=""
-            width={1344}
-            height={768}
-            fetchPriority="high"
-            decoding="async"
-            className="absolute inset-0 size-full object-cover opacity-30 lg:opacity-90"
-          />
+      {/* ── Hero ─────────────────────────────────────────────────────────
+          A photograph shot for this band: a dark saloon in the right half on
+          a pale plaza, the left half open ground. It used to borrow
+          home-hero.webp, which is a near-black showroom — two pages one click
+          apart opening on the same frame, and a dark ground that forced white
+          type. This one is bright overcast daylight, so the band is white and
+          every piece of type on it is ink. White measures 1.4:1 on this
+          photograph and the border token barely more, so the eyebrow, the
+          support line and the secondary button all changed colour with it.
 
-          <div className="relative pt-nav-clear pb-section-sm lg:pb-section">
-            <Container>
-              <div className="max-w-xl">
-                <p className="font-body text-label text-border uppercase">
-                  {VEHICLES_PAGE.eyebrow}
-                </p>
-                <h1 className="mt-4 font-display text-display-sm text-bg lg:text-display">
-                  {VEHICLES_PAGE.heading}
-                </h1>
-                <p className="mt-5 font-body text-body-lg-sm text-border lg:text-body-lg">
-                  {VEHICLES_PAGE.support}
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button href="#available">
-                    {VEHICLES_PAGE.primaryCta}
-                    <Icon name="arrow-right" size={18} />
-                  </Button>
-                  <Button to="/book-a-meeting" variant="dark-section">
-                    {VEHICLES_PAGE.secondaryCta}
-                  </Button>
-                </div>
+          Three things keep ink legal here, and each one was measured on the
+          rendered page against the real glyph pixels — the background under
+          the ink itself, not the line box, which is far wider than the type
+          and charges it for ground no glyph ever touches.
+
+          One: the copy column is capped at 420px rather than 576px, the same
+          measure the detail heroes use. Two: the block is pinned to the
+          bottom of the band, which is also where the wireframe puts it — its
+          buttons finish 104px above the image edge. That matters because a
+          strip of distant skyline runs across the middle of the frame at
+          about 53% of its height and drops ink to 2.9:1; bottom-pinning drops
+          the whole column clear of it at every width from 1024 to 1600.
+          Three: a flat 25% white veil from 1600px only. Past about 1600 the
+          centred 1200px measure has pushed the copy far enough right that the
+          skyline runs under it whatever the vertical alignment, and no
+          arrangement of this copy inside a 536px band clears it — the block
+          would need a band nearer 780px tall to sit wholly above or below the
+          strip. The veil is flat rather than a gradient, and Home already
+          carries one on its own hero.
+
+          It is deliberately NOT on at 1024–1599, where bottom-pinning alone
+          already gives zero failing glyph pixels. A white overlay is exactly
+          what washed the car out of the detail hero and got that band
+          rebuilt; running it at every width to solve a problem that only
+          exists above 1600 would spend the photograph to buy nothing. Scoped
+          this way the frame is clean at every width anyone reviews it at, and
+          the veil only appears where the arithmetic leaves no alternative.
+
+          Two real layouts, one img and one fetch. From 1024px the photograph
+          fills the band and the copy lies over its left half at the height
+          the wireframe draws — 536px, where the band used to run about 480.
+          Below that the same file is a 16:9 block in the flow with the copy
+          beneath it on white: at 390px there is no left half to sit on, the
+          veil is off, and ink on white measures 19.8:1. */}
+      <section className="relative overflow-hidden bg-bg pt-nav-clear lg:pt-0">
+        <img
+          src="/images/hero/vehicles-hero.webp"
+          alt=""
+          width={1344}
+          height={768}
+          fetchPriority="high"
+          decoding="async"
+          className="aspect-video w-full object-cover lg:absolute lg:inset-0 lg:aspect-auto lg:size-full"
+        />
+        <div aria-hidden className="absolute inset-0 hidden bg-bg/25 min-[1600px]:block" />
+
+        <Container>
+          <div className="relative pt-8 pb-section-tight lg:flex lg:min-h-[536px] lg:flex-col lg:justify-end lg:pt-nav-clear lg:pb-[104px]">
+            <div className="max-w-xl lg:max-w-[420px]">
+              <p className="font-body text-label text-ink uppercase">
+                {VEHICLES_PAGE.eyebrow}
+              </p>
+              <h1 className="mt-4 font-display text-display-sm text-ink lg:text-display">
+                {VEHICLES_PAGE.heading}
+              </h1>
+              <p className="mt-5 font-body text-body-lg-sm text-ink lg:text-body-lg">
+                {VEHICLES_PAGE.support}
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button href="#available">
+                  {VEHICLES_PAGE.primaryCta}
+                  <Icon name="arrow-right" size={18} />
+                </Button>
+                <Button to="/book-a-meeting" variant="secondary">
+                  {VEHICLES_PAGE.secondaryCta}
+                </Button>
               </div>
-            </Container>
+            </div>
           </div>
-        </div>
-      </Section>
+        </Container>
+      </section>
 
       {/* ── Filters ──────────────────────────────────────────────────────
-          The card laps the bottom of the hero the way the wireframe draws it.
+          The card laps the bottom of the hero the way the wireframe draws it
+          — 44px of a 139px card in the reference, which is close to the third
+          the negative margin leaves here once the wrapper padding is paid.
           The padding on the wrapper is what stops the negative margin
-          collapsing through and dragging the white band up with it; below
-          768px the offset is absent and the card sits in normal flow. */}
+          collapsing through and dragging the white band up with it.
+
+          The lap starts at 1024px rather than 768px now: below that the
+          photograph is a block in the flow with the copy under it, so there
+          is no image edge left to lap — the card would have pulled up over
+          the hero's own buttons instead. */}
       <div className="bg-bg pt-section-tight">
-        <div className="relative z-10 md:-mt-[104px]">
+        <div className="relative z-10 lg:-mt-[104px]">
           <Container>
             <FilterBar
               value={filters}
@@ -252,11 +293,18 @@ export function Vehicles() {
       </Section>
 
       {/* ── Available vehicles ───────────────────────────────────────────
-          The inventory band is the light grey one. Every piece of metadata in
-          it lives on a white card: muted on #F3F4F6 is 4.49:1 and fails by a
-          hundredth (section 4), so nothing secondary is set on the band
-          itself. */}
-      <Section tone="surface" id="available">
+          The band is white, not grey. The wireframe runs one uninterrupted
+          white page from under the hero all the way to the footer and carries
+          the white / light-grey / obsidian rhythm in inset panels instead —
+          grey body-style tiles, grey vehicle cards, the grey value band, the
+          obsidian showroom card. A grey band here read as a second ground
+          behind cards that already have one.
+
+          It also settles the contrast question rather than working around it:
+          muted on #F3F4F6 is 4.49:1 and fails by a hundredth (section 4), so
+          on the old grey band nothing secondary could touch the band itself.
+          On white, muted is 4.94:1 and legal everywhere in this section. */}
+      <Section tone="white" id="available">
         <div className="flex flex-col gap-2">
           <h2 className="font-display text-h2-sm text-ink lg:text-h2">
             {VEHICLES_PAGE.available.heading}
@@ -327,12 +375,14 @@ export function Vehicles() {
           <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {visible.map((vehicle) => (
               <li key={vehicle.slug}>
-                {/* The wireframe tints its leading card and this page does not
-                    pass `highlight`. The tint composites to #E6ECF7 over this
-                    band, where the card's own muted metadata measures 4.16:1
-                    and fails AA — it only clears on a white ground, at 4.55:1.
-                    The grey inventory band is the wireframe's, so the tint is
-                    what goes rather than the band. */}
+                {/* The wireframe tints its leading card and this page still
+                    does not pass `highlight`. The reason used to be contrast:
+                    over the old grey band the tint composited to #E6ECF7 and
+                    the card's muted metadata fell to 4.16:1. That objection
+                    is gone — the band is white, the tint composites to
+                    #F1F5FF, and a tinted card sets its metadata in ink
+                    anyway. Turning it on is a live decision, not a blocked
+                    one; Home already passes `highlight={index === 0}`. */}
                 <VehicleCard vehicle={vehicle} />
               </li>
             ))}
