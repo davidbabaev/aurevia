@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Button } from '../components/Button'
+import { Container } from '../components/Container'
 import { Gallery } from '../components/Gallery'
 import { Icon } from '../components/Icon'
 import { Section } from '../components/Section'
@@ -10,8 +11,8 @@ import { StatusPill } from '../components/StatusPill'
 import { SwatchRow } from '../components/SwatchRow'
 import { swatchImage } from '../lib/vehicleImages'
 import { VehicleCard } from '../components/VehicleCard'
-import { NOT_FOUND, VEHICLE_DETAIL } from '../data/copy'
-import { VEHICLES } from '../data/vehicles'
+import { NOT_FOUND, PAGINATION, VEHICLE_DETAIL } from '../data/copy'
+import { VEHICLES, type Vehicle } from '../data/vehicles'
 
 const money = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -28,9 +29,9 @@ const TAB_IDS = ['overview', 'features', 'specifications', 'gallery'] as const
 
 /**
  * The gallery strip. `architecture` is the seventh shot the manifest
- * generates, but the showroom band directly above already carries a showroom
- * photograph, and six shots fill the component's six-column thumbnail row
- * exactly as the wireframe shows it.
+ * generates and it is now the hero photograph, so it is not repeated here;
+ * six shots fill the component's six-column thumbnail row exactly as the
+ * wireframe shows it.
  */
 const GALLERY_SHOTS = [
   { key: 'exterior', label: VEHICLE_DETAIL.gallery.exterior },
@@ -41,13 +42,126 @@ const GALLERY_SHOTS = [
   { key: 'road', label: VEHICLE_DETAIL.gallery.road },
 ] as const
 
+/**
+ * The similar-vehicles rail.
+ *
+ * A carousel rather than a grid, and the scroll belongs to this element
+ * rather than the document — a rail that widened the page would break the
+ * 320-to-1920 no-horizontal-scroll rule on every route that used it.
+ *
+ * Keyboard: the scroller itself is focusable and carries a name, so arrow
+ * keys drive it directly; tabbing into a card link scrolls that card into
+ * view natively. The two buttons are the pointer affordance on top of that,
+ * and they go disabled at each end — which is also their resting state when
+ * every card already fits, so a control is never offered that does nothing.
+ *
+ * It lives in this file rather than in components/ because nothing else on
+ * the site shows a rail; the moment a second caller wants one it should move.
+ */
+function SimilarRail({ vehicles }: { vehicles: readonly Vehicle[] }) {
+  const railRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
+  const [edges, setEdges] = useState({ atStart: true, atEnd: true })
+
+  useEffect(() => {
+    const rail = railRef.current
+    const list = listRef.current
+    if (!rail || !list) return
+
+    const update = () => {
+      // A one-pixel tolerance: fractional layout widths mean scrollLeft
+      // rarely lands exactly on the maximum.
+      const max = rail.scrollWidth - rail.clientWidth
+      setEdges({ atStart: rail.scrollLeft <= 1, atEnd: rail.scrollLeft >= max - 1 })
+    }
+
+    update()
+    rail.addEventListener('scroll', update, { passive: true })
+
+    // The rail resizes with the viewport; the list resizes when the vehicle
+    // changes and a different number of cards is in it. Both change whether
+    // there is anything left to scroll to.
+    const observer = new ResizeObserver(update)
+    observer.observe(rail)
+    observer.observe(list)
+
+    return () => {
+      rail.removeEventListener('scroll', update)
+      observer.disconnect()
+    }
+  }, [])
+
+  const step = (direction: 1 | -1) => {
+    const rail = railRef.current
+    if (!rail) return
+    // Just under a full view, so the card at the edge stays on screen and
+    // the reader keeps their place.
+    rail.scrollBy({ left: direction * rail.clientWidth * 0.9, behavior: 'smooth' })
+  }
+
+  // Same shape as the pagination control: a bordered square on white, with
+  // the one arrow glyph in the set turned round for the backwards direction.
+  const control =
+    'flex size-11 items-center justify-center rounded-control border border-muted ' +
+    'bg-bg text-ink disabled:cursor-not-allowed disabled:border-sold disabled:bg-sold'
+
+  return (
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h2 className="font-display text-h2-sm text-ink lg:text-h2">
+          {VEHICLE_DETAIL.sections.similar}
+        </h2>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            disabled={edges.atStart}
+            aria-label={PAGINATION.previous}
+            className={control}
+          >
+            <span className="rotate-180">
+              <Icon name="arrow-right" size={18} />
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => step(1)}
+            disabled={edges.atEnd}
+            aria-label={PAGINATION.next}
+            className={control}
+          >
+            <Icon name="arrow-right" size={18} />
+          </button>
+        </div>
+      </div>
+
+      <div
+        ref={railRef}
+        tabIndex={0}
+        role="group"
+        aria-label={VEHICLE_DETAIL.sections.similar}
+        className="mt-8 overflow-x-auto pb-3"
+      >
+        <ul ref={listRef} className="flex snap-x snap-mandatory gap-6">
+          {vehicles.map((entry, index) => (
+            <li key={entry.slug} className="w-[280px] shrink-0 snap-start sm:w-[320px]">
+              <VehicleCard vehicle={entry} highlight={index === 0} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  )
+}
+
 /** One template serving every vehicle in the local content files. */
 export function VehicleDetail() {
   const { slug } = useParams()
   const vehicle = VEHICLES.find((entry) => entry.slug === slug)
 
   /**
-   * The swatch the hero image is showing. Held here rather than inside
+   * The swatch the colour section is showing. Held here rather than inside
    * SwatchRow because it drives the photograph, not just the chip ring.
    *
    * The slug is stored with it because react-router keeps this component
@@ -77,7 +191,7 @@ export function VehicleDetail() {
   const { specs, features } = vehicle
   const selected =
     paint.slug === slug && paint.index < vehicle.colours.length ? paint.index : 0
-  const heroImage = swatchImage(vehicle.slug, vehicle.colours[selected], selected)
+  const paintImage = swatchImage(vehicle.slug, vehicle.colours[selected], selected)
 
   const priceLabel =
     vehicle.price === null ? VEHICLE_DETAIL.contactForPrice : money.format(vehicle.price)
@@ -150,7 +264,9 @@ export function VehicleDetail() {
   ]
 
   // Same body style first, then the rest of the manufacturer's range. Both
-  // lists come from the real inventory; nothing is invented to fill the row.
+  // lists come from the real inventory; nothing is invented to fill the rail,
+  // and the cap is above what the inventory can supply so the rail shows
+  // everything genuinely related rather than a rounded-down four.
   const similar = [
     ...VEHICLES.filter((entry) => entry.slug !== vehicle.slug && entry.type === vehicle.type),
     ...VEHICLES.filter(
@@ -159,35 +275,79 @@ export function VehicleDetail() {
         entry.type !== vehicle.type &&
         entry.brand === vehicle.brand,
     ),
-  ].slice(0, 4)
+  ].slice(0, 6)
 
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────────
-          The light band the cut-out sits on. Every piece of type here is
-          ink: muted reaches only 4.49:1 on #F3F4F6 (section 4). */}
-      <Section tone="surface" spacing="none">
-        <div className="pt-nav-clear pb-section-tight">
-          <ol className="flex flex-wrap items-center gap-2 font-body text-body-sm text-ink">
-            <li>
-              <Link to="/" className="hover:underline">
-                {VEHICLE_DETAIL.breadcrumb.home}
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link to="/vehicles" className="hover:underline">
-                {VEHICLE_DETAIL.breadcrumb.vehicles}
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page" className="font-semibold">
-              {vehicle.name}
-            </li>
-          </ol>
+          The wireframe's hero is the car photographed outside the showroom
+          with the copy over it, so architecture.webp carries the band.
 
-          <div className="mt-8 grid gap-10 lg:mt-12 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <div>
+          That photograph is bright concrete and glass, which is exactly why
+          the copy does not sit on it directly: a bg scrim gives the type a
+          ground that holds whatever the picture is doing underneath. Worst
+          case — a black photograph under the fade at its thinnest point —
+          ink still measures 6.8:1 on it. This is the one place on the site
+          allowed a gradient, and only because type has to survive a
+          photograph.
+
+          Every piece of type here is ink for the same reason the light band
+          it replaces was: muted has no legal ground on a near-white scrim.
+
+          Two real layouts. From 1024px the photograph fills the band and the
+          copy lies over its left half; below that it is a real 16:9 block in
+          the flow, because a full-bleed photograph at 390px would put the
+          floating white nav pill on bright concrete. */}
+      <section className="relative overflow-hidden bg-bg">
+        <img
+          src={`/images/vehicles/${vehicle.slug}/architecture.webp`}
+          alt={`${vehicle.name} — ${VEHICLE_DETAIL.gallery.architecture}`}
+          width={1344}
+          height={768}
+          fetchPriority="high"
+          decoding="async"
+          // Biased below centre: on a wide viewport a centred crop of a 16:9
+          // frame takes the wheels off the bottom of the car.
+          className="absolute inset-0 hidden size-full object-cover object-[50%_65%] lg:block"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 hidden bg-linear-to-r from-bg from-45% to-bg/0 to-85% lg:block"
+        />
+
+        <Container>
+          <div className="relative pt-nav-clear pb-section-tight lg:min-h-[660px] lg:pb-[128px]">
+            <ol className="flex flex-wrap items-center gap-2 font-body text-body-sm text-ink">
+              <li>
+                <Link to="/" className="hover:underline">
+                  {VEHICLE_DETAIL.breadcrumb.home}
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li>
+                <Link to="/vehicles" className="hover:underline">
+                  {VEHICLE_DETAIL.breadcrumb.vehicles}
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page" className="font-semibold">
+                {vehicle.name}
+              </li>
+            </ol>
+
+            {/* The 390px half of the hero. Hidden rather than duplicated in
+                the accessibility tree — display:none takes it out of both. */}
+            <img
+              src={`/images/vehicles/${vehicle.slug}/architecture.webp`}
+              alt={`${vehicle.name} — ${VEHICLE_DETAIL.gallery.architecture}`}
+              width={1344}
+              height={768}
+              fetchPriority="high"
+              decoding="async"
+              className="mt-6 aspect-[16/9] w-full rounded-card object-cover object-[50%_65%] lg:hidden"
+            />
+
+            <div className="mt-8 lg:mt-12 lg:max-w-[520px]">
               <p className="font-body text-label text-ink uppercase">{vehicle.year}</p>
 
               <h1 className="mt-3 font-display text-display-sm text-ink lg:text-display">
@@ -221,42 +381,31 @@ export function VehicleDetail() {
                 </p>
               </div>
             </div>
-
-            {/* The photograph the swatch row drives. */}
-            <div className="lg:pb-10">
-              <img
-                src={heroImage}
-                alt={`${vehicle.name} — ${vehicle.colours[selected]}`}
-                width={769}
-                height={388}
-                decoding="async"
-                className="mx-auto h-auto w-full max-w-2xl object-contain"
-              />
-            </div>
           </div>
-        </div>
-      </Section>
+        </Container>
+      </section>
 
-      {/* ── Swatches, quick specs and the tab row ────────────────────
+      {/* ── Quick specs and the tab row ──────────────────────────────
           The strip is a white card pulled up over the bottom edge of the
-          light hero band, the same overlap device the search card uses on
-          Home. Below 1024px it simply follows the hero. */}
+          hero photograph, the same overlap device the search card uses on
+          Home. Below 1024px it simply follows the hero.
+
+          It carries the four performance figures and nothing else; the
+          colour picker used to share it, but a swatch that changes a
+          photograph needs the photograph next to it, which a strip has no
+          room for. */}
       <Section tone="white" spacing="tight">
         <div className="relative z-10 rounded-card border border-border bg-bg p-5 lg:-mt-24 lg:p-7">
-          <div className="grid gap-7 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] lg:items-center lg:gap-10">
-            <SwatchRow colours={vehicle.colours} selected={selected} onSelect={selectColour} />
-
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:border-l lg:border-border lg:pl-10">
-              {quickSpecs.map((spec) => (
-                // Reversed in flow so the figure reads above its label while
-                // the markup keeps dt before dd.
-                <div key={spec.label} className="flex flex-col-reverse">
-                  <dt className="mt-1 font-body text-body-sm text-muted">{spec.label}</dt>
-                  <dd className="font-display text-h3-sm text-ink">{spec.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4">
+            {quickSpecs.map((spec) => (
+              // Reversed in flow so the figure reads above its label while
+              // the markup keeps dt before dd.
+              <div key={spec.label} className="flex flex-col-reverse">
+                <dt className="mt-1 font-body text-body-sm text-muted">{spec.label}</dt>
+                <dd className="font-display text-h3-sm text-ink">{spec.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
         <ul className="mt-10 flex gap-8 overflow-x-auto border-b border-border">
@@ -354,6 +503,41 @@ export function VehicleDetail() {
         </div>
       </Section>
 
+      {/* ── Exterior colour ──────────────────────────────────────────
+          The swatch row moved out of the spec strip and got the thing it
+          was always missing: the car it changes, at a size worth looking
+          at. Selecting a chip swaps the cut-out and nothing else.
+
+          The section is grey and the content is a white card, because
+          SwatchRow labels its chips in muted and muted on #F3F4F6 is
+          4.49:1 — it fails by a hundredth (section 4). The card is what
+          makes the component legal here, which is also why the component
+          is wrapped rather than altered.
+
+          No heading: SwatchRow prints "Exterior colour" itself, so the
+          section is named for assistive technology and left alone
+          visually rather than saying it twice. */}
+      <Section tone="surface" label={VEHICLE_DETAIL.colourRow.label}>
+        <div className="grid gap-7 rounded-card border border-border bg-bg p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,240px)] lg:items-center lg:gap-12 lg:p-8">
+          {/* The cut-outs are trimmed to the car and have no ground of
+              their own, so they get the grey one every other cut-out on
+              the site sits on. */}
+          <div className="flex items-center justify-center rounded-card bg-surface px-4 py-6 lg:px-8 lg:py-10">
+            <img
+              src={paintImage}
+              alt={`${vehicle.name} — ${vehicle.colours[selected]}`}
+              width={769}
+              height={388}
+              loading="lazy"
+              decoding="async"
+              className="h-auto w-full object-contain"
+            />
+          </div>
+
+          <SwatchRow colours={vehicle.colours} selected={selected} onSelect={selectColour} />
+        </div>
+      </Section>
+
       {/* ── Features and gallery ─────────────────────────────────────
           One white band carrying both blocks, so the page does not put two
           separate white sections back to back. */}
@@ -424,24 +608,18 @@ export function VehicleDetail() {
         </div>
       </Section>
 
-      {/* ── Book a viewing ───────────────────────────────────────── */}
+      {/* ── Similar vehicles ─────────────────────────────────────────
+          Ahead of the booking banner, not behind it: the reader who is not
+          convinced by this car should meet the alternatives before the page
+          asks them to commit to a visit. */}
       <Section tone="white">
-        <ShowroomCta />
+        <SimilarRail vehicles={similar} />
       </Section>
 
-      {/* ── Similar vehicles ─────────────────────────────────────── */}
+      {/* ── Book a viewing ───────────────────────────────────────────
+          The closing band, as it is on Home and Vehicles. */}
       <Section tone="surface">
-        <h2 className="font-display text-h2-sm text-ink lg:text-h2">
-          {VEHICLE_DETAIL.sections.similar}
-        </h2>
-
-        <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {similar.map((entry, index) => (
-            <li key={entry.slug}>
-              <VehicleCard vehicle={entry} highlight={index === 0} />
-            </li>
-          ))}
-        </ul>
+        <ShowroomCta />
       </Section>
     </>
   )

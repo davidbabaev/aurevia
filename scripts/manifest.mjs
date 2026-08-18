@@ -12,7 +12,7 @@
 
 // ---------------------------------------------------------------------
 // The style clause. Appended VERBATIM to every prompt.
-// One visual register across all 155 images is what makes them read as
+// One visual register across all 154 images is what makes them read as
 // one photographer. Never edit this per-image.
 // ---------------------------------------------------------------------
 export const STYLE = `
@@ -277,8 +277,54 @@ const SITE_SLOTS = [
 // hero-home, where describing what the frame should contain worked and
 // listing what it should not did not.
 // ---------------------------------------------------------------------
+// The backdrop clause itself, lifted out so the cut-outs and the body-style
+// tiles below are asked for the same field in the same words. It is the part
+// remove.bg actually keys against, so it is the part that must never drift
+// between two slots that both have to key. Everything before it is camera and
+// subject; this is background and framing.
+const CHARCOAL_BACKDROP = `It stands against a completely flat, featureless field of DARK CHARCOAL GREY. The background is the critical part of this brief. Every pixel that is not the car is the same dark charcoal grey, RGB(70,70,70) — the tone of a charcoal grey painted studio wall, definitely dark, closer to black than to white, never a light grey and never a bright studio sweep. It is that identical grey corner to corner and edge to edge, behind the car and under it: no gradient, no vignette, no falloff, no brighter pool behind the car, no floor, no horizon, no wall-to-floor curve, no shadow beneath or behind the car and no reflection under it. The car floats against an even charcoal field. Even shadowless studio lighting on the car itself. The car is fully in frame with a small margin on all sides.`;
+
 const cutOutPrompt = (description) =>
-  `A studio product photograph of ${description}, front three-quarter view. The front of the car points to the LEFT of frame. It stands against a completely flat, featureless field of DARK CHARCOAL GREY. The background is the critical part of this brief. Every pixel that is not the car is the same dark charcoal grey, RGB(70,70,70) — the tone of a charcoal grey painted studio wall, definitely dark, closer to black than to white, never a light grey and never a bright studio sweep. It is that identical grey corner to corner and edge to edge, behind the car and under it: no gradient, no vignette, no falloff, no brighter pool behind the car, no floor, no horizon, no wall-to-floor curve, no shadow beneath or behind the car and no reflection under it. The car floats against an even charcoal field. Even shadowless studio lighting on the car itself. The car is fully in frame with a small margin on all sides.`;
+  `A studio product photograph of ${description}, front three-quarter view. The front of the car points to the LEFT of frame. ${CHARCOAL_BACKDROP}`;
+
+// ---------------------------------------------------------------------
+// Body-style tiles for /vehicles. Three, matching the three types actually
+// in the inventory. Same charcoal backdrop and same keying path as the
+// cut-outs; only the camera and the subject differ.
+//
+// SIDE PROFILE, not the cards' front three-quarter. These render small and
+// have to read as a shape — a saloon, a tall box, a low wedge — and a
+// three-quarter of any of the three collapses to the same blob at tile size.
+// "Side view" alone returns a shallow three-quarter, so the angle is stated
+// twice: once as the camera being perpendicular and once as what must NOT be
+// visible, which is the framing that fixed the same drift on the cut-outs.
+//
+// No manufacturer identity: these stand for a category, not a car, and a
+// badge would make one of them read as a brand tile. NEGATIVE bans text but
+// not emblems, so the ban is spelled out here, part by part — a bare "no
+// badges" leaves the wheel centres and the bonnet crest behind.
+//
+// One paint across all three, because the three tiles sit in a row.
+// ---------------------------------------------------------------------
+const BODY_STYLE_PAINT = 'graphite grey metallic';
+
+const BODY_STYLES = [
+  {
+    slug: 'sedan',
+    desc: `a generic modern premium four-door saloon in ${BODY_STYLE_PAINT}, a clean three-box shape with a long bonnet, a separate boot lid and large multi-spoke alloy wheels`,
+  },
+  {
+    slug: 'suv',
+    desc: `a generic modern premium mid-size SUV in ${BODY_STYLE_PAINT}, tall and upright with a raised ride height, a long flat roof, deep wheel arches and large multi-spoke alloy wheels`,
+  },
+  {
+    slug: 'sports',
+    desc: `a generic modern premium two-door sports coupe in ${BODY_STYLE_PAINT}, very low and wide with a long bonnet, a fastback roofline sloping straight into the tail, wide rear haunches and large multi-spoke alloy wheels`,
+  },
+];
+
+const bodyStylePrompt = (description) =>
+  `A studio product photograph of ${description}, in EXACT SIDE PROFILE. The camera is exactly perpendicular to the side of the car, level with the door handles, and the car is perfectly square to it — a flat side elevation, both near-side wheels fully round and fully visible, the whole flank of the car parallel to the frame. This is NOT a three-quarter view: no part of the front of the car and no part of the rear of the car is turned toward the camera, and neither the grille nor the tailgate is visible. The front of the car points to the LEFT of frame. The car is an unbranded generic design belonging to no manufacturer: no badge, no emblem, no logo, no roundel, no star, no rings, no crest, no shield and no lettering anywhere on it — not on the bonnet, not on the wings, not on the doors, not on the boot lid and not on the wheels, whose centre caps are plain smooth discs. ${CHARCOAL_BACKDROP}`;
 
 // Brand cards — 3:4 portrait, architectural, matching the wireframe.
 const BRAND_CARDS = [
@@ -293,6 +339,15 @@ const BRAND_CARDS = [
 // ---------------------------------------------------------------------
 export const SLOTS = [
   ...SITE_SLOTS,
+
+  // 3 body-style tiles (4:3, keyed to transparent by the script)
+  ...BODY_STYLES.map((b) => ({
+    id: `bodystyle-${b.slug}`,
+    file: `bodystyle/${b.slug}.png`,
+    ratio: '4:3',
+    transparent: true,
+    prompt: bodyStylePrompt(b.desc),
+  })),
 
   // 4 brand cards (3:4 portrait)
   ...BRAND_CARDS.map((b) => ({
@@ -322,7 +377,8 @@ export const SLOTS = [
     prompt: cutOutPrompt(v.desc),
   })),
 
-  // 48 colour variants — swatches two to five, 4 per car.
+  // 44 colour variants — swatches two to five; four per car, three for the
+  // four cars whose own paint is black. See swatchesFor.
   ...VEHICLES.flatMap((v) =>
     swatchesFor(v).map((c) => ({
       id: `${v.slug}-colour-${c.slug}`,
@@ -357,5 +413,5 @@ export const SLOTS = [
 ];
 
 
-// 3 + 4 + 4 + 12 + 48 + 60 + 24 = 155
+// 3 + 3 + 4 + 4 + 12 + 44 + 60 + 24 = 154
 export const TOTAL = SLOTS.length;

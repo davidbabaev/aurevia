@@ -71,12 +71,14 @@ const PRICE_BANDS = Array.from({ length: BAND_COUNT }, (_, index) => {
 })
 const PRICE_OPTIONS = PRICE_BANDS.map((band) => band.label)
 
-// One tile per body style actually present, with a car of that type for the
-// silhouette and a counted, never hardcoded, count.
-const BODY_STYLES = TYPE_OPTIONS.map((type) => {
-  const inType = VEHICLES.filter((v) => v.type === type)
-  return { label: type, count: inType.length, imageSlug: inType[0].slug }
-})
+// One tile per body style actually present, with a counted, never hardcoded,
+// count. The tile owns its own silhouette now — it is keyed to the body style
+// itself rather than borrowed from whichever car of that type happened to be
+// first in the file, so this no longer picks one.
+const BODY_STYLES = TYPE_OPTIONS.map((type) => ({
+  label: type,
+  count: VEHICLES.filter((v) => v.type === type).length,
+}))
 
 const TABS = VEHICLES_PAGE.available.tabs
 const SORTS = VEHICLES_PAGE.sort.options
@@ -241,7 +243,6 @@ export function Vehicles() {
               <BodyStyleTile
                 label={style.label}
                 count={style.count}
-                imageSlug={style.imageSlug}
                 selected={filters.type === style.label}
                 onSelect={() => selectBodyStyle(style.label)}
               />

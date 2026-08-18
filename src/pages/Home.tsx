@@ -121,9 +121,9 @@ export function Home() {
         </p>
 
         <ul className="mt-8 grid grid-cols-2 gap-4 lg:mt-10 lg:grid-cols-4 lg:gap-6">
-          {BRAND_CARDS.map((brand) => (
+          {BRAND_CARDS.map((brand, index) => (
             <li key={brand.slug}>
-              <BrandCard name={brand.name} slug={brand.slug} />
+              <BrandCard name={brand.name} slug={brand.slug} highlight={index === 0} />
             </li>
           ))}
         </ul>

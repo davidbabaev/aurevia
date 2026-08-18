@@ -1,4 +1,5 @@
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
 import { SiteLayout } from './components/SiteLayout'
 import { PlaceholderPage } from './components/PlaceholderPage'
 import { BookAMeeting } from './pages/BookAMeeting'
@@ -9,9 +10,31 @@ import { StyleGuide } from './pages/StyleGuide'
 import { VehicleDetail } from './pages/VehicleDetail'
 import { Vehicles } from './pages/Vehicles'
 
+/**
+ * react-router does no scroll restoration of its own, so a client-side
+ * navigation keeps the offset of the route it came from — follow a card from
+ * halfway down the inventory and the vehicle page opens halfway down.
+ *
+ * The hash guard is the whole subtlety. The vehicle template's tab row is
+ * four in-page anchors (#overview, #features, #gallery, #specifications);
+ * scrolling to the top on every location change would fight the browser for
+ * each of them. A location with a hash already says where it wants to be.
+ */
+function ScrollToTop() {
+  const { pathname, hash } = useLocation()
+
+  useEffect(() => {
+    if (hash) return
+    window.scrollTo(0, 0)
+  }, [pathname, hash])
+
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route element={<SiteLayout />}>
           <Route index element={<Home />} />

@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import type { Vehicle } from '../data/vehicles'
 import { CARD, VEHICLE_DETAIL } from '../data/copy'
 import { Button } from './Button'
-import { StatusPill } from './StatusPill'
+import { CarShadow } from './CarShadow'
 
 interface VehicleCardProps {
   vehicle: Vehicle
@@ -23,6 +23,13 @@ const money = new Intl.NumberFormat('en-US', {
  * One vehicle, as it appears in every grid on the site — the home featured
  * band, the inventory grid and the similar-vehicles rail.
  *
+ * The card is a single surface top to bottom. An earlier version gave the
+ * image box the grey token and the body the white one, which split one card
+ * into two stacked blocks; in the wireframe the grey is the SECTION behind
+ * the card and the card itself is one uninterrupted light panel. The section
+ * supplies the contrast, so the card needs no border either — a 1px hairline
+ * shadow is all the separation it takes on both the white and the grey band.
+ *
  * Metadata is muted on a white card, never on the surface band behind it:
  * muted reaches 4.49:1 on #F3F4F6 and fails by a hundredth (section 4).
  * Keeping the card white is what makes the label colour legal.
@@ -33,8 +40,8 @@ export function VehicleCard({ vehicle, highlight = false }: VehicleCardProps) {
   return (
     <article
       className={[
-        'group flex h-full flex-col overflow-hidden rounded-card border',
-        highlight ? 'border-accent bg-accent/10' : 'border-border bg-bg',
+        'group flex h-full flex-col overflow-hidden rounded-card p-5 shadow-xs shadow-ink/10',
+        highlight ? 'bg-accent/10' : 'bg-bg',
       ].join(' ')}
     >
       {/* A fixed box, not one that follows the cut-out.
@@ -42,7 +49,11 @@ export function VehicleCard({ vehicle, highlight = false }: VehicleCardProps) {
           image than a coupe. Letting the box follow the file made every card
           in a row a different height and the prices stopped lining up across
           the grid. The box is fixed and the car is contained inside it. */}
-      <div className="relative flex aspect-[16/9] items-center justify-center bg-surface px-4 py-4">
+      <div className="relative flex aspect-[16/9] items-center justify-center">
+        {/* Before the image in the DOM and both are positioned, so the car
+            paints over the ellipse rather than under it. A negative z-index
+            would instead drop it behind the card's own fill. */}
+        <CarShadow size="card" />
         <img
           src={`/images/vehicles/${vehicle.slug}/card.webp`}
           alt={vehicle.name}
@@ -50,16 +61,15 @@ export function VehicleCard({ vehicle, highlight = false }: VehicleCardProps) {
           height={388}
           loading="lazy"
           decoding="async"
-          className="max-h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+          className="relative max-h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
         />
-        {vehicle.condition === 'New' && (
-          <span className="absolute top-3 left-3">
-            <StatusPill status="new" />
-          </span>
-        )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      {/* No status pill in the image area. Every one of the twelve cars is
+          New, so a badge on all twelve distinguishes nothing — it was noise
+          sitting on top of the photograph. Condition still reaches the reader
+          through the metadata line and the detail page. */}
+      <div className="flex flex-1 flex-col gap-3 pt-5">
         <h3 className="font-display text-h3-sm text-ink">
           <Link to={href} className="hover:underline">
             {vehicle.name}
